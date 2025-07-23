@@ -21,15 +21,7 @@ export function initiateSteamLogin(): void {
 
 // Gera a URL de login real da Steam OpenID
 export function getSteamLoginUrl() {
-  const returnTo = encodeURIComponent('https://skins-eventos-krps.vercel.app/auth/steam/callback');
-  const realm = encodeURIComponent('https://skins-eventos-krps.vercel.app/');
-  return `https://steamcommunity.com/openid/login?` +
-    `openid.ns=http://specs.openid.net/auth/2.0&` +
-    `openid.mode=checkid_setup&` +
-    `openid.return_to=${returnTo}&` +
-    `openid.realm=${realm}&` +
-    `openid.identity=http://specs.openid.net/auth/2.0/identifier_select&` +
-    `openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select`;
+  return 'http://localhost:3001/auth/steam';
 }
 
 // Extrai o SteamID do parâmetro openid.claimed_id
