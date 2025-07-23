@@ -100,31 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    // Verificar se estamos no callback da Steam (verificar parâmetros de query)
-    const urlParams = new URLSearchParams(window.location.search);
-    const openidIdentity = urlParams.get('openid.identity');
-    
-    if (openidIdentity && openidIdentity.includes('steamcommunity.com/openid/id/')) {
-      console.log('Processando callback da Steam...');
-      processSteamCallback()
-        .then(async (steamUser) => {
-          if (steamUser) {
-            console.log('Usuário Steam logado:', steamUser);
-            setSteamUser(steamUser);
-            // Em desenvolvimento, criar usuário anônimo se não houver currentUser
-            if (!auth.currentUser && window.location.hostname === 'localhost') {
-              await signInAnonymously(auth);
-            }
-            // Limpar URL e redirecionar para a página principal
-            window.history.replaceState({}, document.title, '/');
-          }
-        })
-        .catch((error) => {
-          console.error('Erro no callback da Steam:', error);
-          // Limpar URL mesmo em caso de erro
-          window.history.replaceState({}, document.title, '/');
-        });
-    }
+    // Removido: processamento de callback Steam e criação de usuário anônimo
 
     if (currentUser) {
       fetchUserPoints(currentUser.uid);
