@@ -72,12 +72,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function fetchUserPoints(uid: string) {
-    const db = getFirestore();
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      const data = userSnap.data();
-      setPoints(data.points || 0);
+    try {
+      const db = getFirestore();
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        setPoints(data.points || 0);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar pontos do usuário:', error);
     }
   }
 
@@ -85,10 +89,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPoints(prev => {
       const newPoints = prev + amount;
       // Persistir no Firestore
-      const db = getFirestore();
-      if (currentUser) {
-        const userRef = doc(db, 'users', currentUser.uid);
-        updateDoc(userRef, { points: newPoints });
+      try {
+        const db = getFirestore();
+        if (currentUser) {
+          const userRef = doc(db, 'users', currentUser.uid);
+          updateDoc(userRef, { points: newPoints });
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar pontos:', error);
       }
       return newPoints;
     });
@@ -100,13 +108,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    // Removido: processamento de callback Steam e criação de usuário anônimo
+    return unsubscribe;
+  }, []);
 
+  useEffect(() => {
     if (currentUser) {
       fetchUserPoints(currentUser.uid);
     }
-
-    return unsubscribe;
   }, [currentUser]);
 
   const value = {

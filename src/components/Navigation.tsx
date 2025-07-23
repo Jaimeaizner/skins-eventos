@@ -117,53 +117,53 @@ export default function Navigation() {
 
           {/* Centro: Menu de navegação + Botão Criar */}
           <nav className="flex-1 flex items-center justify-center gap-x-6">
-            <Link
-              to="/dashboard"
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                isActive('/dashboard')
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
+              <Link
+                to="/dashboard"
+                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                  isActive('/dashboard') 
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                    : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
               to="/eventos"
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
                 isActive('/eventos')
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
-              }`}
-            >
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                    : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
+                }`}
+              >
               Eventos
-            </Link>
-            <Link
-              to="/leiloes"
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                isActive('/leiloes')
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
-              }`}
-            >
-              Leilões
-            </Link>
-            <Link
-              to="/meus-bilhetes"
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                isActive('/meus-bilhetes')
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
-              }`}
-            >
-              {t('nav.my_tickets')}
-            </Link>
+              </Link>
+              <Link
+                to="/leiloes"
+                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                  isActive('/leiloes') 
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                    : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
+                }`}
+              >
+                Leilões
+              </Link>
+              <Link
+                to="/meus-bilhetes"
+                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                  isActive('/meus-bilhetes') 
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                    : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
+                }`}
+              >
+                {t('nav.my_tickets')}
+              </Link>
             {/* Botão Criar */}
-            <button
+              <button
               className="ml-4 px-6 py-2 rounded-xl bg-gradient-to-r from-yellow-400 to-pink-500 text-white font-bold shadow-lg hover:scale-105 transition whitespace-nowrap"
               onClick={() => setShowCreateModal(true)}
             >
               + Criar
-            </button>
+              </button>
           </nav>
 
           {/* Direita: Carteira, Notificação, Usuário, Idioma */}
@@ -177,12 +177,12 @@ export default function Navigation() {
             <div className="flex items-center gap-2 bg-red-900 bg-opacity-60 px-3 py-1 rounded-lg shadow border border-red-400">
               <FaLock className="text-red-400" />
               <span className="text-white font-bold text-sm">R$ {lockedBalance.toLocaleString()}</span>
-            </div>
+                </div>
             {/* Pontos */}
             <div className="flex items-center gap-2 bg-blue-900 bg-opacity-60 px-3 py-1 rounded-lg shadow border border-blue-400">
               <FaMedal className="text-blue-400" />
               <span className="text-blue-200 font-bold text-sm">{points}</span>
-            </div>
+              </div>
             {/* Notificação */}
             <div className="ml-2 relative">
               <button className="focus:outline-none group" onClick={() => setShowNotifications(true)}>
@@ -195,35 +195,35 @@ export default function Navigation() {
             </div>
             {/* Usuário */}
             <div className="ml-2">
-              {currentUser || steamUser ? (
-                <div className="relative" ref={userMenuRef}>
-                  <button
+            {currentUser || steamUser ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
                     onClick={() => setShowUserMenu((v) => !v)}
-                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-300"
-                  >
-                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                      {steamUser ? (
-                        <img 
-                          src={steamUser.avatarfull} 
-                          alt={steamUser.personaname}
-                          className="w-8 h-8 rounded-full"
-                        />
-                      ) : (
-                        <span className="text-white font-bold text-sm">
-                          {currentUser?.email?.charAt(0).toUpperCase()}
-                        </span>
-                      )}
+                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-300"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    {steamUser ? (
+                      <img 
+                        src={steamUser.avatarfull} 
+                        alt={steamUser.personaname}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <span className="text-white font-bold text-sm">
+                        {currentUser?.email?.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <div className="text-white font-semibold text-sm">
+                      {steamUser ? steamUser.personaname : currentUser?.email}
                     </div>
-                    <div className="hidden md:block text-left">
-                      <div className="text-white font-semibold text-sm">
-                        {steamUser ? steamUser.personaname : currentUser?.email}
-                      </div>
-                      <div className="text-gray-400 text-xs">{t('user.user')}</div>
-                    </div>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                    <div className="text-gray-400 text-xs">{t('user.user')}</div>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
                   {showUserMenu && (
                     <>
                       <div className="fixed inset-0 z-40 bg-black bg-opacity-40" onClick={() => setShowUserMenu(false)}></div>
@@ -277,15 +277,15 @@ export default function Navigation() {
                       </div>
                     </>
                   )}
-                </div>
-              ) : (
-                <Link
-                  to="/"
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300"
-                >
-                  Entrar
-                </Link>
-              )}
+              </div>
+            ) : (
+              <Link
+                to="/"
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300"
+              >
+                Entrar
+              </Link>
+            )}
             </div>
             {/* Idioma */}
             <div className="ml-2 relative" ref={langMenuRef}>
