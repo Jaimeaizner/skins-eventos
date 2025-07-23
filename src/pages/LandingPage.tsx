@@ -5,7 +5,6 @@ import { extractSteamIdFromClaimedId } from '../services/steamAuth';
 import { useEffect } from 'react';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import SteamLogo from '../image/Steamlogo.png';
 
 export function SteamCallbackHandler() {
   const navigate = useNavigate();
@@ -47,7 +46,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <img src={SteamLogo} alt="Steam Logo" className="w-10 h-10 object-contain" />
+                <img src="/image/Steamlogo.png" alt="Steam Logo" className="w-10 h-10 object-contain" />
               </div>
               <h1 className="text-3xl font-black text-white">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-red-400">
