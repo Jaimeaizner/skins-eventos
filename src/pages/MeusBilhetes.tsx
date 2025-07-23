@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useState } from 'react';
 
 interface Ticket {
   id: string;
@@ -32,10 +30,8 @@ interface Ticket {
 }
 
 export default function MeusBilhetes() {
-  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'eventos' | 'auctions'>('eventos');
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const { points, updatePoints } = useAuth();
 
   // Dados simulados - em produção viriam do Firebase
   const myTickets: Ticket[] = [
@@ -99,17 +95,6 @@ export default function MeusBilhetes() {
 
   const eventos = myTickets.filter(ticket => ticket.type === 'evento');
   const auctions = myTickets.filter(ticket => ticket.type === 'auction');
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'CONTRABAND': return 'from-yellow-400 to-yellow-600';
-      case 'COVERT': return 'from-red-500 to-red-700';
-      case 'CLASSIFIED': return 'from-purple-500 to-purple-700';
-      case 'RESTRICTED': return 'from-blue-500 to-blue-700';
-      case 'MIL-SPEC': return 'from-gray-500 to-gray-700';
-      default: return 'from-gray-500 to-gray-700';
-    }
-  };
 
   const formatTimeLeft = (endTime: string) => {
     const now = new Date();
@@ -304,7 +289,16 @@ export default function MeusBilhetes() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-300">Raridade:</span>
-                        <span className={`font-bold bg-gradient-to-r ${getRarityColor(selectedTicket.rarity)} bg-clip-text text-transparent`}>
+                        <span className={`font-bold bg-gradient-to-r ${
+                          selectedTicket.rarity === 'COVERT' ? 'from-red-500 to-red-700' :
+                          selectedTicket.rarity === 'CONTRABAND' ? 'from-yellow-400 to-yellow-600' :
+                          selectedTicket.rarity === 'CLASSIFIED' ? 'from-purple-500 to-purple-700' :
+                          selectedTicket.rarity === 'RESTRICTED' ? 'from-pink-500 to-pink-700' :
+                          selectedTicket.rarity === 'MIL-SPEC' ? 'from-blue-500 to-blue-700' :
+                          selectedTicket.rarity === 'INDUSTRIAL' ? 'from-cyan-500 to-cyan-700' :
+                          selectedTicket.rarity === 'CONSUMER' ? 'from-gray-500 to-gray-700' :
+                          'from-red-600 to-red-800'
+                        } bg-clip-text text-transparent`}>
                           {selectedTicket.rarity}
                         </span>
                       </div>

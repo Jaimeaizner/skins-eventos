@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 
 export default function Suporte() {
-  const { t } = useLanguage();
   const { currentUser } = useAuth();
   const [assunto, setAssunto] = useState('');
   const [mensagem, setMensagem] = useState('');

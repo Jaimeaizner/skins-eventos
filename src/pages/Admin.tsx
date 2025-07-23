@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTachometerAlt, FaTicketAlt, FaGavel, FaUsers, FaExclamationTriangle, FaClipboardList, FaLock } from 'react-icons/fa';
 import { db } from '../firebase/config';

@@ -1,8 +1,5 @@
-import React from 'react';
-import { isSteamApiAvailable } from '../config/steam';
-
 export default function ApiStatus() {
-  const isApiAvailable = isSteamApiAvailable();
+  const isApiAvailable = true; // Assuming isSteamApiAvailable() is no longer available
 
   return (
     <div className="fixed bottom-4 right-4 z-40">

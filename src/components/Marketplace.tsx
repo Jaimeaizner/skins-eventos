@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getSteamInventory, getSteamMarketPrices } from '../services/steamAuth';
 import TradeLinkModal from './TradeLinkModal';
 
@@ -26,7 +26,6 @@ export default function Marketplace({ steamId, onClose }: MarketplaceProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showTradeLinkModal, setShowTradeLinkModal] = useState(false);
-  const [tradeLink, setTradeLink] = useState('');
   const [sortBy, setSortBy] = useState('price-high');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -121,7 +120,6 @@ export default function Marketplace({ steamId, onClose }: MarketplaceProps) {
   };
 
   const handleTradeLinkSave = (link: string) => {
-    setTradeLink(link);
     // Aqui você salvaria o trade link no backend
     console.log('Trade Link salvo:', link);
   };

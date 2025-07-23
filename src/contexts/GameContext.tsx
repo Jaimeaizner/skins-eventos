@@ -1,4 +1,3 @@
-import React, { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 
 export type GameKey = 'cs2' | 'dota2' | 'rust' | 'teamfortress2';

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FaComments, FaRobot, FaUser } from 'react-icons/fa';
+import { useState, useRef, useEffect } from 'react';
+import { FaComments, FaRobot } from 'react-icons/fa';
 import Fuse from 'fuse.js';
 import { useLocation } from 'react-router-dom';
 

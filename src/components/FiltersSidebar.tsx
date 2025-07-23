@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
 
 interface FilterOption {
@@ -30,7 +29,6 @@ interface FiltersSidebarProps {
 
 export default function FiltersSidebar({ isOpen, onClose, onFilterChange, pageType }: FiltersSidebarProps) {
   const { selectedGame } = useGame();
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedFilters, setSelectedFilters] = useState<any>({});
 
   // Filtros dinâmicos por jogo
@@ -87,68 +85,6 @@ export default function FiltersSidebar({ isOpen, onClose, onFilterChange, pageTy
     
     setSelectedFilters(newFilters);
     onFilterChange(newFilters);
-  };
-
-  const renderFilterOptions = (category: FilterCategory) => {
-    if (!category.options) return null;
-
-    return (
-      <div className="mt-2 space-y-2">
-        {category.options.map((option) => (
-          <label key={option.id} className="flex items-center space-x-3 cursor-pointer hover:bg-white hover:bg-opacity-10 rounded-lg p-2 transition-colors">
-            <input
-              type="checkbox"
-              checked={selectedFilters[category.id]?.includes(option.id) || false}
-              onChange={() => handleFilterChange(category.id, option.id)}
-              className="w-4 h-4 text-purple-600 bg-gray-700 border-white border-opacity-20 rounded focus:ring-purple-500"
-            />
-            <span className={`text-sm ${option.color || 'text-gray-300'}`}>
-              {option.icon && <span className="mr-2">{option.icon}</span>}
-              {option.label}
-            </span>
-          </label>
-        ))}
-      </div>
-    );
-  };
-
-  const renderSlider = (category: FilterCategory) => {
-    if (!category.hasSlider) return null;
-
-    return (
-      <div className="mt-2 space-y-4">
-        {category.hasInputs && (
-          <div className="grid grid-cols-2 gap-2 w-full mb-2">
-            <input
-              type="number"
-              placeholder="Min"
-              value={selectedFilters[category.id]?.[0] ?? category.sliderMin ?? 0}
-              min={category.sliderMin ?? 0}
-              max={selectedFilters[category.id]?.[1] ?? category.sliderMax ?? 10000}
-              onChange={e => {
-                const min = Number(e.target.value);
-                const max = selectedFilters[category.id]?.[1] ?? category.sliderMax ?? 10000;
-                handleFilterChange(category.id, '', [min, max]);
-              }}
-              className="w-full px-3 py-2 bg-gray-700 bg-opacity-50 rounded-lg border border-white border-opacity-20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-            />
-            <input
-              type="number"
-              placeholder="Max"
-              value={selectedFilters[category.id]?.[1] ?? category.sliderMax ?? 10000}
-              min={selectedFilters[category.id]?.[0] ?? category.sliderMin ?? 0}
-              max={category.sliderMax ?? 10000}
-              onChange={e => {
-                const min = selectedFilters[category.id]?.[0] ?? category.sliderMin ?? 0;
-                const max = Number(e.target.value);
-                handleFilterChange(category.id, '', [min, max]);
-              }}
-              className="w-full px-3 py-2 bg-gray-700 bg-opacity-50 rounded-lg border border-white border-opacity-20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-            />
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (

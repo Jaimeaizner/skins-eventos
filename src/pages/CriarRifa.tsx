@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getSteamMarketPrice } from '../services/steamAuth';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function CriarRifa() {
-  const { t } = useLanguage();
   const navigate = useNavigate();
-  const { currentUser, updatePoints } = useAuth();
+  const { updatePoints } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -176,11 +175,6 @@ export default function CriarRifa() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const getRarityColor = (rarity: string) => {
-    const rarityObj = rarities.find(r => r.value === rarity);
-    return rarityObj ? rarityObj.color : 'from-gray-400 to-gray-500';
   };
 
   return (

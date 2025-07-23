@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { fetchSteamInventory, getSkinImageUrl } from '../services/steamAuth';
 
 interface InventoryItem {
   id: string;
@@ -19,37 +20,6 @@ interface InventoryItem {
 
 export default function Inventario() {
   const { currentUser } = useAuth();
-  const [itens, setItens] = useState<any[]>([]);
-  useEffect(() => {
-    async function fetchItens() {
-      if (!currentUser) return;
-      const snap = await getDocs(collection(db, 'items'));
-      setItens(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(item => item.ownerId === currentUser.uid && item.status === 'disponivel'));
-    }
-    fetchItens();
-  }, [currentUser]);
-
-  async function retirarItem(itemId: string) {
-    // Aqui você chamaria a função do bot para enviar a oferta Steam
-    await updateDoc(doc(db, 'items', itemId), { status: 'retirada_pendente' });
-    // Notificar usuário, atualizar UI, etc
-  }
-  async function rifarItem(itemId: string) {
-    // Redirecionar para página de criar evento já com o item selecionado
-    // Exemplo: navigate(`/criar-rifa?item=${itemId}`)
-  }
-  async function leiloarItem(itemId: string) {
-    // Redirecionar para página de criar leilão já com o item selecionado
-    // Exemplo: navigate(`/criar-leilao?item=${itemId}`)
-  }
-
-  const [activeTab, setActiveTab] = useState('steam');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [onlyTradable, setOnlyTradable] = useState(true);
-  const [sortBy, setSortBy] = useState('default');
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<InventoryItem[]>([]);
-
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
     {
       id: '1',
@@ -145,12 +115,6 @@ export default function Inventario() {
     }
   };
 
-  // Função para adicionar itens à venda
-  const handleAddToSale = () => {
-    // Implementar lógica para adicionar à venda
-    console.log('Adicionar à venda:', selectedItems);
-  };
-
   // Função para venda rápida (apenas para itens ganhos em rifas)
   const handleQuickSell = () => {
     const raffleWonItems = selectedItems.filter(item => item.isWonFromRaffle);
@@ -171,6 +135,31 @@ export default function Inventario() {
   // Calcular valores
   const totalValue = selectedItems.reduce((sum, item) => sum + item.price, 0);
   const totalFee = totalValue * 0.05; // 5% de taxa
+
+  // Substituir o useEffect para buscar inventário real:
+  useEffect(() => {
+    async function fetchRealInventory() {
+      const steamId = localStorage.getItem('steamId');
+      if (!steamId) return;
+      try {
+        const data = await fetchSteamInventory(steamId);
+        // data.assets = lista de itens, data.descriptions = detalhes
+        const items = data.assets.map((asset: any) => {
+          const desc = data.descriptions.find((d: any) => d.classid === asset.classid && d.instanceid === asset.instanceid);
+          return {
+            id: asset.assetid,
+            name: desc?.market_hash_name || desc?.market_name || 'Unknown',
+            image: getSkinImageUrl(desc?.icon_url || ''),
+            exterior: desc?.type || '',
+          };
+        });
+        setInventoryItems(items);
+      } catch (e) {
+        setInventoryItems([]);
+      }
+    }
+    fetchRealInventory();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">

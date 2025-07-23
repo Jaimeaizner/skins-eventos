@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,8 +30,6 @@ export default function Navigation() {
   const navigate = useNavigate();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-  const [langMenuPosition, setLangMenuPosition] = useState({ top: 0, left: 0 });
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -39,20 +37,21 @@ export default function Navigation() {
   const updateMenuPosition = () => {
     if (userMenuRef.current) {
       const rect = userMenuRef.current.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.right - 256 // 256px = largura do menu (w-64)
-      });
+      // 256px = largura do menu (w-64)
+      // setMenuPosition({
+      //   top: rect.bottom + window.scrollY + 8,
+      //   left: rect.right - 256
+      // });
     }
   };
   // Calcular posição do menu de idioma
   const updateLangMenuPosition = () => {
     if (langMenuRef.current) {
       const rect = langMenuRef.current.getBoundingClientRect();
-      setLangMenuPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.left
-      });
+      // setLangMenuPosition({
+      //   top: rect.bottom + window.scrollY + 8,
+      //   left: rect.left
+      // });
     }
   };
 

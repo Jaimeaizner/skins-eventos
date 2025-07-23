@@ -1,6 +1,25 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { extractSteamIdFromClaimedId } from '../services/steamAuth';
+import { useEffect } from 'react';
+
+export function SteamCallbackHandler() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const claimedId = params.get('openid.claimed_id');
+    if (claimedId) {
+      const steamId = extractSteamIdFromClaimedId(claimedId);
+      if (steamId) {
+        localStorage.setItem('steamId', steamId);
+        navigate('/dashboard');
+      }
+    }
+  }, [location, navigate]);
+  return <div className="text-white p-8">Processando login Steam...</div>;
+}
 
 export default function LandingPage() {
   const { loginWithSteam } = useAuth();

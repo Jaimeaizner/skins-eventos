@@ -1,11 +1,9 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ModalProvider } from './contexts/ModalContext';
 import { GameProvider } from './contexts/GameContext';
 import Navigation from './components/Navigation';
-import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Rifas from './pages/Rifas';
@@ -28,6 +26,7 @@ import { useEffect, useState } from 'react';
 import Footer from './components/Footer';
 import Termos from './pages/Termos';
 import Privacidade from './pages/Privacidade';
+import { SteamCallbackHandler } from './pages/LandingPage';
 
 function AppContent() {
   const { currentUser, steamUser } = useAuth();
@@ -55,29 +54,6 @@ function AppContent() {
     }
     checkProfile();
   }, [currentUser]);
-
-  // Teste Firestore: escrita e leitura
-  React.useEffect(() => {
-    async function testFirestore() {
-      try {
-        // Escreve um documento de teste
-        const docRef = await addDoc(collection(db, 'testes'), {
-          mensagem: 'Olá Firestore!',
-          timestamp: new Date()
-        });
-        console.log('Documento adicionado com ID:', docRef.id);
-
-        // Lê todos os documentos da coleção de teste
-        const querySnapshot = await getDocs(collection(db, 'testes'));
-        querySnapshot.forEach((doc) => {
-          console.log('Documento Firestore:', doc.id, doc.data());
-        });
-      } catch (e) {
-        console.error('Erro ao testar Firestore:', e);
-      }
-    }
-    testFirestore();
-  }, []);
 
   // Se não estiver logado, mostra a landing page
   if (!currentUser && !steamUser) {
@@ -109,6 +85,7 @@ function AppContent() {
           <Route path="/termos-de-uso" element={<Termos />} />
           <Route path="/privacidade" element={<Privacidade />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/auth/steam/callback" element={<SteamCallbackHandler />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         <ChatBot />

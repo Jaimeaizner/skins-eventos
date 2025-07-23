@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { buildSteamApiUrl, buildCommunityUrl, isSteamApiAvailable, STEAM_CONFIG } from '../config/steam';
+import { STEAM_CONFIG } from '../config/steam';
 
 // Serviço para autenticação da Steam
 export interface SteamUser {
@@ -18,6 +17,25 @@ export function initiateSteamLogin(): void {
   const steamLoginUrl = `https://steamcommunity.com/openid/login?openid.ns=http://specs.openid.net/auth/2.0&openid.mode=checkid_setup&openid.return_to=${encodeURIComponent(returnUrl)}&openid.realm=${encodeURIComponent(window.location.origin)}&openid.identity=http://specs.openid.net/auth/2.0/identifier_select&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select`;
   
   window.location.href = steamLoginUrl;
+}
+
+// Gera a URL de login real da Steam OpenID
+export function getSteamLoginUrl() {
+  const returnTo = encodeURIComponent('https://skins-eventos-krps.vercel.app/auth/steam/callback');
+  const realm = encodeURIComponent('https://skins-eventos-krps.vercel.app/');
+  return `https://steamcommunity.com/openid/login?` +
+    `openid.ns=http://specs.openid.net/auth/2.0&` +
+    `openid.mode=checkid_setup&` +
+    `openid.return_to=${returnTo}&` +
+    `openid.realm=${realm}&` +
+    `openid.identity=http://specs.openid.net/auth/2.0/identifier_select&` +
+    `openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select`;
+}
+
+// Extrai o SteamID do parâmetro openid.claimed_id
+export function extractSteamIdFromClaimedId(claimedId: string): string | null {
+  const match = claimedId.match(/\/(\d{17,})$/);
+  return match ? match[1] : null;
 }
 
 // Função para extrair Steam ID da URL de callback
@@ -45,10 +63,7 @@ function extractSteamIdFromUrl(): string | null {
 async function getSteamUserData(steamId: string): Promise<SteamUser | null> {
   try {
     // Tentar usar JSONP para contornar CORS
-    const url = buildSteamApiUrl(STEAM_CONFIG.ENDPOINTS.PLAYER_SUMMARIES, {
-      steamids: steamId,
-      format: 'json'
-    });
+    const url = `${STEAM_CONFIG.ENDPOINTS.PLAYER_SUMMARIES}?steamids=${steamId}&format=json`;
     
     console.log('Tentando obter dados via JSONP:', url);
     
@@ -256,33 +271,6 @@ export async function getSteamInventory(steamId: string): Promise<any[]> {
   }
 }
 
-// Função auxiliar para determinar raridade baseada nas tags
-function getRarityFromTags(tags: any[]): string {
-  const rarityTag = tags.find(tag => tag.category === 'Rarity');
-  if (rarityTag) {
-    const rarity = rarityTag.internal_name.toLowerCase();
-    if (rarity.includes('legendary')) return 'legendary';
-    if (rarity.includes('mythical')) return 'mythical';
-    if (rarity.includes('divine')) return 'divine';
-    if (rarity.includes('rare')) return 'rare';
-  }
-  return 'common';
-}
-
-// Função auxiliar para determinar condição baseada nas tags
-function getConditionFromTags(tags: any[]): string {
-  const conditionTag = tags.find(tag => tag.category === 'Exterior');
-  if (conditionTag) {
-    const condition = conditionTag.internal_name.toLowerCase();
-    if (condition.includes('factory new')) return 'FN';
-    if (condition.includes('minimal wear')) return 'MW';
-    if (condition.includes('field-tested')) return 'FT';
-    if (condition.includes('well-worn')) return 'WW';
-    if (condition.includes('battle-scarred')) return 'BS';
-  }
-  return 'Unknown';
-}
-
 // Função para obter preços em tempo real da Steam Market
 export async function getSteamMarketPrice(marketHashName: string): Promise<number> {
   try {
@@ -357,4 +345,25 @@ export async function getSteamMarketPrices(marketHashNames: string[]): Promise<R
   }
   
   return prices;
+} 
+
+// Busca inventário real do usuário na Steam
+export async function fetchSteamInventory(steamId: string) {
+  const url = `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=5000`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Erro ao buscar inventário Steam');
+  return res.json();
+}
+
+// Monta URL da imagem real da skin
+export function getSkinImageUrl(iconUrl: string) {
+  return `https://steamcommunity-a.akamaihd.net/economy/image/${iconUrl}`;
+}
+
+// Busca preço real da skin no Market da Steam
+export async function fetchSteamMarketPrice(marketHashName: string) {
+  const url = `https://steamcommunity.com/market/priceoverview/?appid=730&currency=7&market_hash_name=${encodeURIComponent(marketHashName)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Erro ao buscar preço Steam');
+  return res.json();
 } 

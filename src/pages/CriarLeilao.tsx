@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getSteamMarketPrice } from '../services/steamAuth';
 
 export default function CriarLeilao() {
-  const { t } = useLanguage();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -173,11 +172,6 @@ export default function CriarLeilao() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const getRarityColor = (rarity: string) => {
-    const rarityObj = rarities.find(r => r.value === rarity);
-    return rarityObj ? rarityObj.color : 'from-gray-400 to-gray-500';
   };
 
   return (

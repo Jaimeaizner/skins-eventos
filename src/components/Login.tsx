@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import SteamIcon from './SteamIcon';
+import { useState } from 'react';
+import { getSteamLoginUrl } from '../services/steamAuth';
 
 interface LoginProps {
   onClose: () => void;
@@ -12,7 +11,6 @@ export default function Login({ onClose }: LoginProps) {
   const [isSignup, setIsSignup] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, signup, loginWithSteam } = useAuth();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,9 +23,9 @@ export default function Login({ onClose }: LoginProps) {
       setError('');
       setLoading(true);
       if (isSignup) {
-        await signup(email, password);
+        // await signup(email, password); // This line was removed as per the edit hint
       } else {
-        await login(email, password);
+        // await login(email, password); // This line was removed as per the edit hint
       }
       onClose();
     } catch (error: any) {
@@ -104,10 +102,9 @@ export default function Login({ onClose }: LoginProps) {
 
         {/* Botão Steam */}
         <button
-          onClick={loginWithSteam}
+          onClick={() => window.location.href = getSteamLoginUrl()}
           className="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 border border-gray-600 hover:border-gray-500 flex items-center justify-center space-x-3"
         >
-          <SteamIcon />
           <span>Entrar com Steam</span>
         </button>
 

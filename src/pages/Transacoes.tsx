@@ -1,8 +1,4 @@
-import React from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
-
 export default function Transacoes() {
-  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">

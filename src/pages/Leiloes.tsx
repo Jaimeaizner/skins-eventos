@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
@@ -50,7 +50,6 @@ export default function Leiloes() {
   const [auctionChats, setAuctionChats] = useState<{ [auctionId: string]: { user: string; msg: string; time: number }[] }>({});
   const [chatInput, setChatInput] = useState('');
   const [lastMsgTime, setLastMsgTime] = useState<{ [auctionId: string]: number }>({});
-  const [notifier, setNotifier] = useState<{ msg: string; time: number }[]>([]);
   const [showBidWarning, setShowBidWarning] = useState(false);
   const [pendingBid, setPendingBid] = useState<{ auctionId: string; amount: number } | null>(null);
 
@@ -371,7 +370,7 @@ export default function Leiloes() {
         msg: `${b.nickname} deu um lance de R$ ${b.bid.toLocaleString()} em ${a.name}`,
         time: b.timestamp.getTime()
       })));
-      setNotifier(allBids.sort((a, b) => b.time - a.time).slice(0, 8));
+      // Remover variáveis/funções não utilizadas: notifier, getRarityColor, index
     }, 2000);
     return () => clearInterval(interval);
   }, [auctionsFiltered]);
@@ -421,19 +420,6 @@ export default function Leiloes() {
       return true;
     });
   }
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'covert': return 'text-orange-400';
-      case 'contraband': return 'text-yellow-400';
-      case 'classified': return 'text-purple-400';
-      case 'restricted': return 'text-pink-400';
-      case 'mil-spec': return 'text-blue-400';
-      case 'industrial': return 'text-cyan-400';
-      case 'consumer': return 'text-gray-400';
-      default: return 'text-red-400';
-    }
-  };
 
   const getCardStyle = (rarity: string, isHighlighted: boolean) => {
     let baseStyle = 'group relative bg-white bg-opacity-10 backdrop-blur-md rounded-xl overflow-hidden hover:transform hover:scale-105 transition-all duration-500 cursor-pointer shadow-2xl';

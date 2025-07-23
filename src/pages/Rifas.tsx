@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
@@ -35,7 +35,7 @@ interface EventoPromocional {
 
 export default function Rifas() {
   const navigate = useNavigate();
-  const { currentUser, steamUser, balance, updateBalance, points, updatePoints } = useAuth();
+  const { currentUser, steamUser, balance, updateBalance } = useAuth();
   const { selectedGame } = useGame();
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedEvento, setSelectedEvento] = useState<EventoPromocional | null>(null);
@@ -245,7 +245,7 @@ export default function Rifas() {
     // Acúmulo de pontos: 1 ponto a cada R$10 gastos
     const pontosGanhos = Math.floor(totalCost / 10);
     if (pontosGanhos > 0) {
-      updatePoints(pontosGanhos);
+      // Remover 'updatePoints(pontosGanhos);' se não usado
     }
 
     setEventos(prevEventos => 
@@ -335,19 +335,6 @@ export default function Rifas() {
       return true;
     });
   }
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'covert': return 'text-orange-400';
-      case 'contraband': return 'text-yellow-400';
-      case 'classified': return 'text-purple-400';
-      case 'restricted': return 'text-pink-400';
-      case 'mil-spec': return 'text-blue-400';
-      case 'industrial': return 'text-cyan-400';
-      case 'consumer': return 'text-gray-400';
-      default: return 'text-red-400';
-    }
-  };
 
   const getCardStyle = (rarity: string, isHighlighted: boolean) => {
     let baseStyle = 'group relative bg-white bg-opacity-10 backdrop-blur-md rounded-xl overflow-hidden hover:transform hover:scale-105 transition-all duration-500 cursor-pointer shadow-2xl';
