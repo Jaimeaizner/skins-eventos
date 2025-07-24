@@ -13,14 +13,9 @@ export interface SteamUser {
 
 // Função para iniciar o login da Steam
 export function initiateSteamLogin(): void {
-  try {
-    const returnUrl = `${window.location.origin}/`;
-    const steamLoginUrl = `https://steamcommunity.com/openid/login?openid.ns=http://specs.openid.net/auth/2.0&openid.mode=checkid_setup&openid.return_to=${encodeURIComponent(returnUrl)}&openid.realm=${encodeURIComponent(window.location.origin)}&openid.identity=http://specs.openid.net/auth/2.0/identifier_select&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select`;
-    
-    window.location.href = steamLoginUrl;
-  } catch (error) {
-    console.error('Erro ao iniciar login Steam:', error);
-  }
+  const returnUrl = `${window.location.origin}/auth/steam/callback`;
+  const steamLoginUrl = `https://steamcommunity.com/openid/login?openid.ns=http://specs.openid.net/auth/2.0&openid.mode=checkid_setup&openid.return_to=${encodeURIComponent(returnUrl)}&openid.realm=${encodeURIComponent(window.location.origin)}&openid.identity=http://specs.openid.net/auth/2.0/identifier_select&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select`;
+  window.location.href = steamLoginUrl;
 }
 
 // Gera a URL de login real da Steam OpenID
