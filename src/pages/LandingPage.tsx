@@ -10,12 +10,27 @@ export function SteamCallbackHandler() {
   const navigate = useNavigate();
   const location = useLocation();
   useEffect(() => {
+    alert('URL de callback: ' + window.location.href);
     const params = new URLSearchParams(location.search);
+    console.log('SteamCallbackHandler - location.search:', location.search);
+    for (const [key, value] of params.entries()) {
+      console.log(`Param: ${key} = ${value}`);
+    }
     const token = params.get('token');
+    const openid = params.get('openid.claimed_id');
     if (token) {
+      console.log('Token encontrado:', token);
       signInWithCustomToken(auth, token).then(() => {
         navigate('/dashboard');
       });
+    } else if (openid) {
+      console.log('openid.claimed_id encontrado:', openid);
+      // Aqui você pode buscar dados do Steam e salvar no contexto
+      // Exemplo: setSteamUser(...)
+      navigate('/dashboard');
+    } else {
+      console.log('Nenhum token ou openid.claimed_id encontrado.');
+      navigate('/');
     }
   }, [location, navigate]);
   return <div className="text-white p-8">Processando login Steam...</div>;
