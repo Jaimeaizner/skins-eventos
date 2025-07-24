@@ -106,6 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
+      // Se o usuário está logado, buscar dados do Steam
+      if (user && user.providerData.some(p => p.providerId === 'custom')) {
+        // Aqui você pode buscar dados do Steam e setar steamUser
+        // Exemplo: setSteamUser({ ... })
+      }
     });
 
     return unsubscribe;
