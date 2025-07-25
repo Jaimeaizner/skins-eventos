@@ -104,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('[AUTH CONTEXT] onAuthStateChanged:', user);
       setCurrentUser(user);
       setLoading(false);
       // Se o usuário está logado, buscar dados do Steam

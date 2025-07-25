@@ -3,37 +3,64 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { extractSteamIdFromClaimedId } from '../services/steamAuth';
 import { useEffect } from 'react';
-import { signInWithCustomToken } from 'firebase/auth';
+import { signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
 export function SteamCallbackHandler() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    alert('URL de callback: ' + window.location.href);
+    console.log('[STEAM CALLBACK] Componente montado!');
+    console.log('[STEAM CALLBACK] URL completa:', window.location.href);
+    console.log('[STEAM CALLBACK] Search params:', location.search);
+    
     const params = new URLSearchParams(location.search);
-    console.log('SteamCallbackHandler - location.search:', location.search);
-    for (const [key, value] of params.entries()) {
-      console.log(`Param: ${key} = ${value}`);
-    }
     const token = params.get('token');
-    const openid = params.get('openid.claimed_id');
+    
+    console.log('[STEAM CALLBACK] Token encontrado:', token ? 'SIM' : 'NÃO');
+    
     if (token) {
-      console.log('Token encontrado:', token);
-      signInWithCustomToken(auth, token).then(() => {
-        navigate('/dashboard');
-      });
-    } else if (openid) {
-      console.log('openid.claimed_id encontrado:', openid);
-      // Aqui você pode buscar dados do Steam e salvar no contexto
-      // Exemplo: setSteamUser(...)
-      navigate('/dashboard');
+      console.log('[STEAM CALLBACK] Tentando autenticar com token...');
+      
+      signInWithCustomToken(auth, token)
+        .then((userCredential) => {
+          console.log('[STEAM CALLBACK] SignInWithCustomToken sucesso:', userCredential);
+          
+          // Aguarda o onAuthStateChanged
+          const unsubscribe = onAuthStateChanged(auth, (user) => {
+            console.log('[STEAM CALLBACK] onAuthStateChanged chamado:', user);
+            if (user) {
+              console.log('[STEAM CALLBACK] Usuário autenticado, redirecionando...');
+              setLoading(false);
+              navigate('/dashboard');
+              unsubscribe();
+            }
+          });
+        })
+        .catch((err) => {
+          console.error('[STEAM CALLBACK] Erro no signInWithCustomToken:', err);
+          alert('Erro ao autenticar: ' + err.message);
+          setLoading(false);
+          navigate('/');
+        });
     } else {
-      console.log('Nenhum token ou openid.claimed_id encontrado.');
+      console.log('[STEAM CALLBACK] Nenhum token encontrado, redirecionando...');
+      setLoading(false);
       navigate('/');
     }
   }, [location, navigate]);
-  return <div className="text-white p-8">Processando login Steam...</div>;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="text-white text-center">
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p>Processando login Steam...</p>
+        <p className="text-sm text-gray-400 mt-2">Aguarde um momento...</p>
+      </div>
+    </div>
+  );
 }
 
 export default function LandingPage() {
