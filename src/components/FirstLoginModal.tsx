@@ -65,64 +65,64 @@ function TermsModal({ isOpen, onClose, type }: { isOpen: boolean; onClose: () =>
   const content = type === 'terms' ? {
     title: 'Termos de Serviço',
     content: `
-      <h2>Termos de Serviço - Skins Rifas</h2>
+      <h2 style="color: white;">Termos de Serviço - Skins Eventos</h2>
       
-      <h3>1. Aceitação dos Termos</h3>
-      <p>Ao acessar e usar a plataforma Skins Rifas, você concorda em cumprir e estar vinculado a estes Termos de Serviço.</p>
+      <h3 style="color: white;">1. Aceitação dos Termos</h3>
+      <p style="color: white;">Ao acessar e usar a plataforma Skins Eventos, você concorda em cumprir e estar vinculado a estes Termos de Serviço.</p>
       
-      <h3>2. Elegibilidade</h3>
-      <p>Você deve ter pelo menos 18 anos de idade para usar nossos serviços. Ao usar a plataforma, você confirma que atende a este requisito.</p>
+      <h3 style="color: white;">2. Elegibilidade</h3>
+      <p style="color: white;">Você deve ter pelo menos 18 anos de idade para usar nossos serviços. Ao usar a plataforma, você confirma que atende a este requisito.</p>
       
-      <h3>3. Uso da Plataforma</h3>
-      <p>Você concorda em usar a plataforma apenas para fins legais e de acordo com estes Termos. É proibido:</p>
-      <ul>
+      <h3 style="color: white;">3. Uso da Plataforma</h3>
+      <p style="color: white;">Você concorda em usar a plataforma apenas para fins legais e de acordo com estes Termos. É proibido:</p>
+      <ul style="color: white;">
         <li>Usar a plataforma para atividades ilegais</li>
         <li>Tentar acessar contas de outros usuários</li>
         <li>Interferir no funcionamento da plataforma</li>
         <li>Usar bots ou scripts automatizados</li>
       </ul>
       
-      <h3>4. Rifas e Leilões</h3>
-      <p>As rifas e leilões são regulamentados pelas seguintes regras:</p>
-      <ul>
+      <h3 style="color: white;">4. Eventos e Leilões</h3>
+      <p style="color: white;">Os eventos e leilões são regulamentados pelas seguintes regras:</p>
+      <ul style="color: white;">
         <li>Os resultados são determinados por sorteio justo</li>
         <li>Não há garantia de vitória</li>
         <li>Os itens são enviados automaticamente após confirmação</li>
         <li>Não aceitamos reembolsos após participação</li>
       </ul>
       
-      <h3>5. Responsabilidades</h3>
-      <p>Você é responsável por:</p>
-      <ul>
+      <h3 style="color: white;">5. Responsabilidades</h3>
+      <p style="color: white;">Você é responsável por:</p>
+      <ul style="color: white;">
         <li>Manter a segurança de sua conta</li>
         <li>Fornecer informações precisas</li>
         <li>Respeitar as regras da plataforma</li>
         <li>Pagar pelos serviços utilizados</li>
       </ul>
       
-      <h3>6. Modificações</h3>
-      <p>Reservamo-nos o direito de modificar estes termos a qualquer momento. As modificações entrarão em vigor imediatamente após a publicação.</p>
+      <h3 style="color: white;">6. Modificações</h3>
+      <p style="color: white;">Reservamo-nos o direito de modificar estes termos a qualquer momento. As modificações entrarão em vigor imediatamente após a publicação.</p>
       
-      <h3>7. Contato</h3>
-      <p>Para dúvidas sobre estes termos, entre em contato através do suporte da plataforma.</p>
+      <h3 style="color: white;">7. Contato</h3>
+      <p style="color: white;">Para dúvidas sobre estes termos, entre em contato através do suporte da plataforma.</p>
     `
   } : {
     title: 'Política de Privacidade',
     content: `
-      <h2>Política de Privacidade - Skins Rifas</h2>
+      <h2 style="color: white;">Política de Privacidade - Skins Eventos</h2>
       
-      <h3>1. Informações Coletadas</h3>
-      <p>Coletamos as seguintes informações:</p>
-      <ul>
+      <h3 style="color: white;">1. Informações Coletadas</h3>
+      <p style="color: white;">Coletamos as seguintes informações:</p>
+      <ul style="color: white;">
         <li>Dados da conta Steam (ID, nome de usuário, inventário)</li>
         <li>Informações de perfil (nome, email, país)</li>
         <li>Dados de transações e atividades</li>
         <li>Logs de acesso e uso da plataforma</li>
       </ul>
       
-      <h3>2. Como Usamos Suas Informações</h3>
-      <p>Utilizamos suas informações para:</p>
-      <ul>
+      <h3 style="color: white;">2. Como Usamos Suas Informações</h3>
+      <p style="color: white;">Utilizamos suas informações para:</p>
+      <ul style="color: white;">
         <li>Fornecer e melhorar nossos serviços</li>
         <li>Processar transações e pagamentos</li>
         <li>Comunicar atualizações importantes</li>
@@ -130,21 +130,21 @@ function TermsModal({ isOpen, onClose, type }: { isOpen: boolean; onClose: () =>
         <li>Cumprir obrigações legais</li>
       </ul>
       
-      <h3>3. Compartilhamento de Dados</h3>
-      <p>Não vendemos, alugamos ou compartilhamos suas informações pessoais com terceiros, exceto:</p>
-      <ul>
+      <h3 style="color: white;">3. Compartilhamento de Dados</h3>
+      <p style="color: white;">Não vendemos, alugamos ou compartilhamos suas informações pessoais com terceiros, exceto:</p>
+      <ul style="color: white;">
         <li>Quando exigido por lei</li>
         <li>Para proteger nossos direitos e segurança</li>
         <li>Com provedores de serviços confiáveis</li>
         <li>Com seu consentimento explícito</li>
       </ul>
       
-      <h3>4. Segurança dos Dados</h3>
-      <p>Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações contra acesso não autorizado, alteração, divulgação ou destruição.</p>
+      <h3 style="color: white;">4. Segurança dos Dados</h3>
+      <p style="color: white;">Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações contra acesso não autorizado, alteração, divulgação ou destruição.</p>
       
-      <h3>5. Seus Direitos</h3>
-      <p>Você tem o direito de:</p>
-      <ul>
+      <h3 style="color: white;">5. Seus Direitos</h3>
+      <p style="color: white;">Você tem o direito de:</p>
+      <ul style="color: white;">
         <li>Acessar suas informações pessoais</li>
         <li>Corrigir dados imprecisos</li>
         <li>Solicitar a exclusão de seus dados</li>
@@ -152,17 +152,17 @@ function TermsModal({ isOpen, onClose, type }: { isOpen: boolean; onClose: () =>
         <li>Portabilidade de dados</li>
       </ul>
       
-      <h3>6. Cookies e Tecnologias Similares</h3>
-      <p>Utilizamos cookies e tecnologias similares para melhorar sua experiência, analisar o uso da plataforma e personalizar conteúdo.</p>
+      <h3 style="color: white;">6. Cookies e Tecnologias Similares</h3>
+      <p style="color: white;">Utilizamos cookies e tecnologias similares para melhorar sua experiência, analisar o uso da plataforma e personalizar conteúdo.</p>
       
-      <h3>7. Retenção de Dados</h3>
-      <p>Mantemos suas informações pelo tempo necessário para fornecer nossos serviços e cumprir obrigações legais.</p>
+      <h3 style="color: white;">7. Retenção de Dados</h3>
+      <p style="color: white;">Mantemos suas informações pelo tempo necessário para fornecer nossos serviços e cumprir obrigações legais.</p>
       
-      <h3>8. Alterações na Política</h3>
-      <p>Podemos atualizar esta política periodicamente. Notificaremos sobre mudanças significativas.</p>
+      <h3 style="color: white;">8. Alterações na Política</h3>
+      <p style="color: white;">Podemos atualizar esta política periodicamente. Notificaremos sobre mudanças significativas.</p>
       
-      <h3>9. Contato</h3>
-      <p>Para questões sobre privacidade, entre em contato através do suporte da plataforma.</p>
+      <h3 style="color: white;">9. Contato</h3>
+      <p style="color: white;">Para questões sobre privacidade, entre em contato através do suporte da plataforma.</p>
     `
   };
 
