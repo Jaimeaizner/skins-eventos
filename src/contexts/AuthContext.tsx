@@ -25,6 +25,7 @@ interface AuthContextType {
   loading: boolean;
   points: number;
   updatePoints: (amount: number) => void;
+  refreshSteamUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -102,6 +103,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
+  async function refreshSteamUser() {
+    if (!currentUser) {
+      console.log('[AUTH CONTEXT] refreshSteamUser: Nenhum usuário logado');
+      return;
+    }
+
+    try {
+      const steamId = localStorage.getItem('steamId');
+      if (steamId) {
+        console.log('[AUTH CONTEXT] refreshSteamUser: Carregando dados do Steam para ID:', steamId);
+        const steamUserData = await getSteamUserData(steamId);
+        if (steamUserData) {
+          console.log('[AUTH CONTEXT] refreshSteamUser: Dados do Steam carregados:', steamUserData);
+          setSteamUser(steamUserData);
+        } else {
+          console.warn('[AUTH CONTEXT] refreshSteamUser: Não foi possível carregar dados do Steam');
+          setSteamUser(null);
+        }
+      } else {
+        console.log('[AUTH CONTEXT] refreshSteamUser: Nenhum Steam ID encontrado no localStorage');
+        setSteamUser(null);
+      }
+    } catch (error) {
+      console.error('[AUTH CONTEXT] refreshSteamUser: Erro ao carregar dados do Steam:', error);
+      setSteamUser(null);
+    }
+  }
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('[AUTH CONTEXT] onAuthStateChanged:', user);
@@ -143,8 +172,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (currentUser) {
       fetchUserPoints(currentUser.uid);
+      // Tentar carregar dados do Steam se ainda não estiverem carregados
+      if (!steamUser) {
+        console.log('[AUTH CONTEXT] Usuário logado mas steamUser não carregado, tentando carregar...');
+        refreshSteamUser();
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, steamUser]);
 
   const value = {
     currentUser,
@@ -160,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateLockedBalance,
     points,
     updatePoints,
+    refreshSteamUser,
   };
 
   return (

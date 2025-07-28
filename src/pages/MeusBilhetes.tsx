@@ -32,7 +32,7 @@ interface Ticket {
 }
 
 export default function MeusBilhetes() {
-  const { steamUser } = useAuth();
+  const { steamUser, currentUser, refreshSteamUser } = useAuth();
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'eventos' | 'auctions'>('eventos');
@@ -44,6 +44,20 @@ export default function MeusBilhetes() {
       
       if (!steamUser?.steamid) {
         console.warn('[MEUS BILHETES] Steam User não disponível');
+        // Tentar recarregar dados do Steam se o usuário estiver logado
+        if (currentUser) {
+          console.log('[MEUS BILHETES] Tentando recarregar dados do Steam...');
+          await refreshSteamUser();
+          // Aguardar um pouco e tentar novamente
+          setTimeout(() => {
+            if (!steamUser?.steamid) {
+              console.warn('[MEUS BILHETES] Ainda sem dados do Steam após tentativa de recarregamento');
+              setTickets([]);
+              setLoading(false);
+            }
+          }, 1000);
+          return;
+        }
         setTickets([]);
         setLoading(false);
         return;

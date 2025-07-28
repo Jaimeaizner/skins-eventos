@@ -89,9 +89,9 @@ app.get('/api/auth/steam/callback', async (req, res) => {
     const token = await firebaseAuth.createCustomToken(steamId);
     console.log('[STEAM CALLBACK] Token customizado gerado');
 
-    // 5. Redirecionar para o frontend com o token
+    // 5. Redirecionar para o frontend com o token e steamId
     const frontendUrl = process.env.FRONTEND_URL || `http://localhost:${PORT}`;
-    const redirectUrl = `${frontendUrl}/auth/steam/callback?token=${token}`;
+    const redirectUrl = `${frontendUrl}/auth/steam/callback?token=${token}&steamId=${steamId}`;
     console.log('[STEAM CALLBACK] Redirecionando para:', redirectUrl);
     return res.redirect(redirectUrl);
     

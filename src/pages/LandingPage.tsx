@@ -18,10 +18,15 @@ export function SteamCallbackHandler() {
     
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
+    const steamId = params.get('steamId');
     
     console.log('[STEAM CALLBACK] Token encontrado:', token ? 'SIM' : 'NÃO');
+    console.log('[STEAM CALLBACK] Steam ID encontrado:', steamId ? 'SIM' : 'NÃO');
     
-    if (token) {
+    if (token && steamId) {
+      console.log('[STEAM CALLBACK] Salvando Steam ID no localStorage:', steamId);
+      localStorage.setItem('steamId', steamId);
+      
       console.log('[STEAM CALLBACK] Tentando autenticar com token...');
       
       signInWithCustomToken(auth, token)
@@ -46,7 +51,7 @@ export function SteamCallbackHandler() {
           navigate('/');
         });
     } else {
-      console.log('[STEAM CALLBACK] Nenhum token encontrado, redirecionando...');
+      console.log('[STEAM CALLBACK] Token ou Steam ID não encontrados, redirecionando...');
       setLoading(false);
       navigate('/');
     }

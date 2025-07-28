@@ -51,7 +51,7 @@ interface EventoPromocional {
 
 export default function Rifas() {
   const navigate = useNavigate();
-  const { currentUser, steamUser, balance, updateBalance } = useAuth();
+  const { currentUser, steamUser, balance, updateBalance, refreshSteamUser } = useAuth();
   const { selectedGame } = useGame();
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedEvento, setSelectedEvento] = useState<EventoPromocional | null>(null);
@@ -71,7 +71,22 @@ export default function Rifas() {
         
         if (!steamUser?.steamid) {
           console.warn('[RIFAS] Steam User não disponível');
+          // Tentar recarregar dados do Steam se o usuário estiver logado
+          if (currentUser) {
+            console.log('[RIFAS] Tentando recarregar dados do Steam...');
+            await refreshSteamUser();
+            // Aguardar um pouco e tentar novamente
+            setTimeout(() => {
+              if (!steamUser?.steamid) {
+                console.warn('[RIFAS] Ainda sem dados do Steam após tentativa de recarregamento');
+                setEventos([]);
+                setLoading(false);
+              }
+            }, 1000);
+            return;
+          }
           setEventos([]);
+          setLoading(false);
           return;
         }
         

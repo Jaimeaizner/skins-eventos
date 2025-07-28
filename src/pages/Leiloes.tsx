@@ -50,7 +50,7 @@ interface Auction {
 }
 
 export default function Leiloes() {
-  const { steamUser, currentUser } = useAuth();
+  const { steamUser, currentUser, refreshSteamUser } = useAuth();
   const navigate = useNavigate();
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
@@ -77,7 +77,22 @@ export default function Leiloes() {
         
         if (!steamUser?.steamid) {
           console.warn('[LEILOES] Steam User não disponível');
+          // Tentar recarregar dados do Steam se o usuário estiver logado
+          if (currentUser) {
+            console.log('[LEILOES] Tentando recarregar dados do Steam...');
+            await refreshSteamUser();
+            // Aguardar um pouco e tentar novamente
+            setTimeout(() => {
+              if (!steamUser?.steamid) {
+                console.warn('[LEILOES] Ainda sem dados do Steam após tentativa de recarregamento');
+                setAuctions([]);
+                setLoading(false);
+              }
+            }, 1000);
+            return;
+          }
           setAuctions([]);
+          setLoading(false);
           return;
         }
         
