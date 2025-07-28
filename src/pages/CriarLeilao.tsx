@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getSteamMarketPrice } from '../services/steamAuth';
 
 export default function CriarLeilao() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -17,7 +18,8 @@ export default function CriarLeilao() {
     rarity: 'consumer',
     exterior: 'field-tested',
     image: null as File | null,
-    imagePreview: ''
+    imagePreview: '',
+    itemData: null as any
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -25,6 +27,28 @@ export default function CriarLeilao() {
   const [steamMarketPrice, setSteamMarketPrice] = useState<number | null>(null);
   const [isFetchingPrice, setIsFetchingPrice] = useState(false);
   const [priceValid, setPriceValid] = useState(true);
+
+  // Carregar dados do item se fornecidos via URL
+  useEffect(() => {
+    const itemParam = searchParams.get('item');
+    if (itemParam) {
+      try {
+        const itemData = JSON.parse(decodeURIComponent(itemParam));
+        setFormData(prev => ({
+          ...prev,
+          name: itemData.name || '',
+          description: itemData.name || '',
+          steamPrice: itemData.market_price ? parseFloat(itemData.market_price).toString() : '',
+          startingBid: itemData.market_price ? (parseFloat(itemData.market_price) * 0.8).toString() : '',
+          rarity: itemData.rarity || 'consumer',
+          exterior: itemData.exterior ? itemData.exterior.toLowerCase().replace(' ', '-') : 'field-tested',
+          itemData: itemData
+        }));
+      } catch (error) {
+        console.error('Erro ao carregar dados do item:', error);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     async function fetchPrice() {
@@ -51,7 +75,7 @@ export default function CriarLeilao() {
   }, [steamMarketPrice, formData.steamPrice]);
 
   // Cálculo da taxa e lucro líquido
-  const taxa = Math.max(Number(formData.startingBid) * 0.2, 2);
+  const taxa = Math.max(Number(formData.startingBid) * 0.1, 2); // Taxa de 10% do valor total
   const arrecadacao = Number(formData.startingBid);
   const lucroLiquido = arrecadacao - taxa;
 
