@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
 import FiltersSidebar from '../components/FiltersSidebar';
+import { getRealSteamInventoryForEvents, getSteamSkinData, getStickerImageUrl, getPendantImageUrl } from '../services/steamAuth';
 
 interface EventoPromocional {
   id: string;
@@ -30,7 +31,22 @@ interface EventoPromocional {
     avatar: string;
     tickets: number;
   }>;
-  game: 'cs2' | 'dota2' | 'rust' | 'teamfortress2'; // Adicionado campo game
+  game: 'cs2' | 'dota2' | 'rust' | 'teamfortress2';
+  
+  // Novos campos para dados reais da Steam
+  marketHashName?: string;
+  stickers?: Array<{
+    id: string;
+    name: string;
+    image_url: string;
+  }>;
+  nameTag?: string;
+  condition?: string;
+  pendant?: {
+    id: string;
+    name: string;
+    image_url: string;
+  };
 }
 
 export default function Rifas() {
@@ -43,8 +59,60 @@ export default function Rifas() {
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<any>({});
   const [ticketQuantity, setTicketQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  // Exemplo: adicionar campo game: 'cs2' | 'dota2' | 'rust' | 'teamfortress2' em cada rifa
+  // Carregar dados reais da Steam quando o componente montar
+  useEffect(() => {
+    const loadRealData = async () => {
+      if (currentUser?.uid) {
+        try {
+          setLoading(true);
+          const realSkins = await getRealSteamInventoryForEvents(currentUser.uid);
+          
+          // Converter skins reais para eventos
+          const realEventos = realSkins.slice(0, 10).map((skin, index) => ({
+            id: `real-${index}`,
+            name: skin.name,
+            price: skin.steamPrice,
+            image: skin.icon_url,
+            participants: Math.floor(Math.random() * 50) + 10,
+            maxParticipants: 100,
+            rarity: skin.rarity,
+            isFavorited: false,
+            wear: skin.wear || 0.15,
+            steamPrice: skin.steamPrice,
+            ticketPrice: skin.ticketPrice,
+            isHighlighted: index < 3,
+            creator: {
+              steamId: currentUser.uid,
+              nickname: steamUser?.personaname || 'Usuário Steam',
+              avatar: steamUser?.avatarfull || '',
+              totalRaffles: Math.floor(Math.random() * 100) + 10
+            },
+            participantsList: [],
+            game: 'cs2' as const,
+            marketHashName: skin.market_hash_name,
+            stickers: skin.stickers || [],
+            nameTag: skin.name_tag,
+            condition: skin.condition
+          }));
+          
+          setEventos(realEventos);
+        } catch (error) {
+          console.error('Erro ao carregar dados reais:', error);
+          // Fallback para dados mock se falhar
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+    
+    loadRealData();
+  }, [currentUser, steamUser]);
+
+  // Dados mock como fallback
   const [eventos, setEventos] = useState<EventoPromocional[]>([
     {
       id: '1',
@@ -419,10 +487,34 @@ export default function Rifas() {
             </div>
           )}
 
-          {/* Header com título */}
+          {/* Header com título e informações do usuário */}
           <div className="w-full flex justify-center mb-6 mt-2">
             <img src="/image/Rifas.png" alt="Evento Promocional" className="max-h-32 md:max-h-40 object-contain drop-shadow-lg" />
           </div>
+          
+          {/* Informações do usuário */}
+          {steamUser && (
+            <div className="flex items-center justify-center mb-6">
+              <div className="flex items-center space-x-3 bg-white/10 rounded-xl px-4 py-2 border border-white/20">
+                <img 
+                  src={steamUser.avatarfull} 
+                  alt={steamUser.personaname}
+                  className="w-8 h-8 rounded-full border-2 border-white/20"
+                />
+                <span className="text-white font-semibold">{steamUser.personaname}</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Loading state */}
+          {loading && (
+            <div className="flex justify-center items-center py-16">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-white text-lg">Carregando skins da Steam...</p>
+              </div>
+            </div>
+          )}
 
           {/* Cards de Eventos */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16">
@@ -449,12 +541,46 @@ export default function Rifas() {
                 )}
 
                 <div className="relative">
-                  <div className="w-full h-40 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center overflow-hidden">
+                  <div className="w-full h-40 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center overflow-hidden relative">
                     <img
                       src={evento.image}
                       alt={evento.name}
                       className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-500"
                     />
+                    
+                    {/* Adesivos - posicionados no canto inferior esquerdo */}
+                    {evento.stickers && evento.stickers.length > 0 && (
+                      <div className="absolute bottom-2 left-2 flex flex-wrap gap-1 max-w-20">
+                        {evento.stickers.slice(0, 4).map((sticker, index) => (
+                          <img
+                            key={index}
+                            src={sticker.image_url}
+                            alt={sticker.name}
+                            className="w-4 h-4 rounded-sm border border-white/20"
+                            title={sticker.name}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Pingente - posicionado no canto superior esquerdo */}
+                    {evento.pendant && (
+                      <div className="absolute top-2 left-2">
+                        <img
+                          src={evento.pendant.image_url}
+                          alt={evento.pendant.name}
+                          className="w-6 h-6 rounded-full border border-white/20"
+                          title={evento.pendant.name}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Name Tag - indicador visual */}
+                    {evento.nameTag && (
+                      <div className="absolute top-2 right-12 bg-blue-500 bg-opacity-80 text-white px-1 py-0.5 rounded text-xs font-bold">
+                        NT
+                      </div>
+                    )}
                   </div>
                   
                   {/* Valor do Ticket no topo direito */}
@@ -703,7 +829,7 @@ export default function Rifas() {
         pageType="rifas"
       />
 
-      {eventosFiltrados.length === 0 ? (
+      {eventosFiltrados.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16">
           <span className="text-2xl font-bold text-white mb-4 text-center">nenhum item disponivel no momento<br/>aproveite e coloque o seu item!</span>
           <button
@@ -712,19 +838,6 @@ export default function Rifas() {
           >
             Criar
           </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-          {eventosFiltrados.map(evento => (
-            <div key={evento.id} className="bg-white/10 rounded-xl p-6 shadow-lg flex flex-col items-center">
-              <img src={evento.image} alt={evento.name} className="w-32 h-32 object-cover rounded mb-4" />
-              <span className="text-lg font-bold text-white mb-2">{evento.name}</span>
-              <span className="text-pink-400 font-semibold mb-1">R$ {evento.price}</span>
-              <button className="mt-2 px-4 py-2 rounded bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold shadow hover:scale-105 transition" onClick={() => setSelectedEvento(evento)}>
-                Ver detalhes
-              </button>
-            </div>
-          ))}
         </div>
       )}
     </div>

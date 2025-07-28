@@ -146,6 +146,109 @@ app.get('/api/steam/market/:marketHashName', async (req, res) => {
   }
 });
 
+// API para dados detalhados de skins
+app.get('/api/steam/skin/:marketHashName', async (req, res) => {
+  try {
+    const { marketHashName } = req.params;
+    
+    // Buscar dados da skin no mercado Steam
+    const marketResponse = await fetch(
+      `https://steamcommunity.com/market/priceoverview/?appid=730&currency=7&market_hash_name=${encodeURIComponent(marketHashName)}`
+    );
+    const marketData = await marketResponse.json();
+    
+    // Buscar informações detalhadas da skin
+    const skinResponse = await fetch(
+      `https://steamcommunity.com/market/listings/730/${encodeURIComponent(marketHashName)}`
+    );
+    const skinHtml = await skinResponse.text();
+    
+    // Extrair dados da página HTML (simplificado)
+    const skinData = {
+      market_hash_name: marketHashName,
+      icon_url: extractIconUrl(skinHtml),
+      stickers: extractStickers(skinHtml),
+      name_tag: extractNameTag(skinHtml),
+      wear: extractWear(skinHtml),
+      rarity: extractRarity(skinHtml),
+      condition: extractCondition(skinHtml)
+    };
+    
+    res.json(skinData);
+  } catch (error) {
+    console.error('Erro ao buscar dados da skin:', error);
+    res.status(500).json({ error: 'Erro ao buscar dados da skin' });
+  }
+});
+
+// Funções auxiliares para extrair dados da página HTML
+function extractIconUrl(html) {
+  const match = html.match(/g_rgAssets\[730\]\[2\]\[(\d+)\]/);
+  if (match) {
+    return `https://steamcdn-a.akamaihd.net/apps/730/icons/econ/default_generated/${match[1]}.png`;
+  }
+  return '';
+}
+
+function extractStickers(html) {
+  const stickers = [];
+  const stickerMatches = html.match(/g_rgAssets\[730\]\[2\]\[(\d+)\]/g);
+  if (stickerMatches) {
+    stickerMatches.forEach(match => {
+      const id = match.match(/\d+/)[0];
+      stickers.push({
+        id,
+        image_url: `https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/${id}.png`
+      });
+    });
+  }
+  return stickers;
+}
+
+function extractNameTag(html) {
+  const match = html.match(/Name Tag: ([^<]+)/);
+  return match ? match[1] : null;
+}
+
+function extractWear(html) {
+  const match = html.match(/Exterior: ([^<]+)/);
+  if (match) {
+    const condition = match[1].toLowerCase();
+    const wearMap = {
+      'factory new': 0.01,
+      'minimal wear': 0.07,
+      'field-tested': 0.15,
+      'well-worn': 0.38,
+      'battle-scarred': 0.45
+    };
+    return wearMap[condition] || 0.15;
+  }
+  return 0.15;
+}
+
+function extractRarity(html) {
+  const match = html.match(/Rarity: ([^<]+)/);
+  if (match) {
+    const rarity = match[1].toLowerCase();
+    const rarityMap = {
+      'consumer grade': 'consumer',
+      'industrial grade': 'industrial',
+      'mil-spec grade': 'mil-spec',
+      'restricted': 'restricted',
+      'classified': 'classified',
+      'covert': 'covert',
+      'contraband': 'contraband'
+    };
+    return rarityMap[rarity] || 'mil-spec';
+  }
+  return 'mil-spec';
+}
+
+function extractCondition(html) {
+  const match = html.match(/Exterior: ([^<]+)/);
+  return match ? match[1] : 'Field-Tested';
+}
+
 // SPA fallback - todas as outras rotas vão para o index.html
 app.get('*', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'));

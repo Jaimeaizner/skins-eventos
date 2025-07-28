@@ -216,7 +216,88 @@ export async function getSteamMarketPrices(marketHashNames: string[]): Promise<R
   return prices;
 }
 
-// Monta URL da imagem real da skin
+// Função para buscar dados reais de skins da Steam
+export const getSteamSkinData = async (marketHashName: string) => {
+  try {
+    // Buscar dados da skin no mercado Steam
+    const marketResponse = await fetch(`/api/steam/market/${encodeURIComponent(marketHashName)}`);
+    const marketData = await marketResponse.json();
+    
+    // Buscar informações detalhadas da skin
+    const skinResponse = await fetch(`/api/steam/skin/${encodeURIComponent(marketHashName)}`);
+    const skinData = await skinResponse.json();
+    
+    return {
+      marketData,
+      skinData,
+      imageUrl: getSkinImageUrl(skinData.icon_url || ''),
+      stickers: skinData.stickers || [],
+      nameTag: skinData.name_tag || null,
+      wear: skinData.wear || 0,
+      rarity: getRarityFromTags(skinData.tags || []),
+      condition: getConditionFromTags(skinData.tags || [])
+    };
+  } catch (error) {
+    console.error('Erro ao buscar dados da skin:', error);
+    throw error;
+  }
+};
+
+// Função para buscar inventário real do usuário e criar eventos
+export const getRealSteamInventoryForEvents = async (steamId: string) => {
+  try {
+    const inventory = await getSteamInventory(steamId, '730'); // CS2
+    
+    // Filtrar apenas skins que podem ser usadas em eventos
+    const eligibleSkins = inventory.filter((item: any) => {
+      return item.type === 'weapon' && 
+             item.marketable && 
+             item.tradeable &&
+             item.rarity !== 'consumer'; // Excluir skins muito comuns
+    });
+    
+    // Buscar preços do mercado para cada skin
+    const skinsWithPrices = await Promise.all(
+      eligibleSkins.map(async (skin: any) => {
+        try {
+          const marketPrice = await getSteamMarketPrice(skin.market_hash_name);
+          return {
+            ...skin,
+            steamPrice: parseFloat(marketPrice.price?.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+            ticketPrice: Math.max(1, Math.floor((parseFloat(marketPrice.price?.replace(/[^\d.,]/g, '').replace(',', '.')) || 0) / 100))
+          };
+        } catch (error) {
+          console.error(`Erro ao buscar preço para ${skin.market_hash_name}:`, error);
+          return {
+            ...skin,
+            steamPrice: 0,
+            ticketPrice: 1
+          };
+        }
+      })
+    );
+    
+    return skinsWithPrices;
+  } catch (error) {
+    console.error('Erro ao buscar inventário para eventos:', error);
+    throw error;
+  }
+};
+
+// Função para obter URL da imagem da skin com alta qualidade
 export function getSkinImageUrl(iconUrl: string): string {
-  return `https://steamcommunity-a.akamaihd.net/economy/image/${iconUrl}`;
+  if (!iconUrl) return '';
+  
+  // Converter para URL de alta qualidade
+  return iconUrl.replace('_medium', '_large').replace('_small', '_large');
+}
+
+// Função para obter URL dos adesivos
+export function getStickerImageUrl(stickerId: string): string {
+  return `https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/${stickerId}.png`;
+}
+
+// Função para obter URL do pingente
+export function getPendantImageUrl(pendantId: string): string {
+  return `https://steamcdn-a.akamaihd.net/apps/730/icons/econ/charms/${pendantId}.png`;
 } 
