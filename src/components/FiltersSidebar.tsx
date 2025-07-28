@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
 
 interface FilterOption {
