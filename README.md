@@ -1,100 +1,83 @@
-# Skins Rifas - Plataforma de Rifas de Skins CS2
+# 🎮 Skins Rifas - Marketplace de Skins CS2
 
 Sistema completo de marketplace para skins do CS2 usando as APIs públicas da Valve.
 
-## 🚀 Deploy no Vercel
+## 🚀 Deploy Rápido no Railway (RECOMENDADO)
 
-### Problemas Corrigidos
-
-1. **Erro de Minificação**: Corrigido o erro "dr is not a function" que ocorria em produção
-2. **Integração Steam**: Simplificada a integração com a API da Steam para evitar conflitos
-3. **Dependências**: Removidas dependências desnecessárias que causavam conflitos
-4. **Configuração Vite**: Otimizada para produção com chunking adequado
-
-### Como Fazer Deploy
-
-1. **Conecte seu repositório ao Vercel**
-   - Vá para [vercel.com](https://vercel.com)
-   - Importe seu repositório do GitHub
-   - O Vercel detectará automaticamente que é um projeto Vite
-
-2. **Configurações do Projeto**
-   - **Framework Preset**: Vite
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
-
-3. **Variáveis de Ambiente** (se necessário)
-   - Adicione suas chaves do Firebase no painel do Vercel
-   - Configure as variáveis de ambiente necessárias
-
-4. **Deploy**
-   - Clique em "Deploy"
-   - O Vercel fará o build automaticamente
-   - O site estará disponível em `https://seu-projeto.vercel.app`
-
-### Estrutura do Projeto
-
-```
-src/
-├── components/          # Componentes React reutilizáveis
-├── contexts/           # Contextos React (Auth, Language, etc.)
-├── pages/              # Páginas da aplicação
-├── services/           # Serviços (Steam API, etc.)
-├── firebase/           # Configuração do Firebase
-└── config/             # Configurações gerais
-```
-
-### Tecnologias Utilizadas
-
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS
-- **Backend**: Firebase (Auth + Firestore)
-- **Integração**: Steam Web API (APIs públicas)
-- **Deploy**: Vercel
-
-### Funcionalidades
-
-- ✅ Login via Steam OpenID
-- ✅ Sistema de rifas e leilões
-- ✅ Marketplace de skins
-- ✅ Inventário do usuário
-- ✅ Sistema de pagamentos
-- ✅ Interface responsiva
-- ✅ Suporte a múltiplos idiomas
-
-### Desenvolvimento Local
-
+### 1. Prepare o projeto
 ```bash
-# Instalar dependências
 npm install
+npm run build
+```
 
-# Executar em desenvolvimento
+### 2. Configure as variáveis de ambiente no Railway
+- `FIREBASE_SERVICE_ACCOUNT`: Cole todo o conteúdo do seu `serviceAccountKey.json`
+- `STEAM_API_KEY`: Sua chave da API Steam (opcional)
+- `FRONTEND_URL`: URL do seu domínio (ex: https://seu-site.railway.app)
+
+### 3. Deploy no Railway
+1. Acesse [railway.app](https://railway.app)
+2. Conecte seu repositório GitHub
+3. Selecione este projeto
+4. Configure as variáveis de ambiente
+5. Deploy automático!
+
+## 🔧 Desenvolvimento Local
+
+### Instalação
+```bash
+npm install
+```
+
+### Configuração
+1. Copie `env.example` para `.env`
+2. Configure suas variáveis de ambiente
+3. Cole o conteúdo do `serviceAccountKey.json` em `FIREBASE_SERVICE_ACCOUNT`
+
+### Executar
+```bash
+# Desenvolvimento
 npm run dev
 
-# Build para produção
+# Produção local
 npm run build
-
-# Preview do build
-npm run preview
+npm start
 ```
 
-### Notas Importantes
+## 🌐 Funcionalidades
 
-- A integração com a Steam usa apenas APIs públicas (não requer chave de API)
-- O sistema funciona com dados simulados para contornar limitações de CORS
-- Em produção, recomenda-se implementar um backend para APIs da Steam
-- Todas as transações são simuladas para demonstração
+- ✅ Login com Steam (OpenID)
+- ✅ Busca de inventário real
+- ✅ Preços do mercado Steam
+- ✅ Sistema de rifas
+- ✅ Sistema de leilões
+- ✅ Carteira virtual
+- ✅ Interface responsiva
 
-### Suporte
+## 🔐 Segurança
 
-Para problemas ou dúvidas, verifique:
-1. Console do navegador para erros
-2. Logs do Vercel no painel de deploy
-3. Configurações do Firebase
-4. Variáveis de ambiente no Vercel
+- Autenticação via Firebase
+- Validação OpenID com Steam
+- APIs públicas da Valve
+- Sem dados sensíveis no código
+
+## 📱 Tecnologias
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Backend**: Node.js + Express
+- **Banco**: Firebase Firestore
+- **Auth**: Firebase Auth + Steam OpenID
+- **Styling**: TailwindCSS
+- **Deploy**: Railway
+
+## 🎯 APIs Utilizadas
+
+- **Steam OpenID**: Autenticação
+- **Steam Community API**: Inventário
+- **Steam Market API**: Preços
+- **Steam Web API**: Dados do usuário
 
 ---
 
 **Status**: ✅ Pronto para produção
-**Última atualização**: Correção de erros de minificação e integração Steam
+**Última atualização**: Janeiro 2025

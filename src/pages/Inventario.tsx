@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { fetchSteamInventory, getSkinImageUrl } from '../services/steamAuth';
+import { getSteamInventory, getSkinImageUrl } from '../services/steamAuth';
 
 interface InventoryItem {
   id: string;
@@ -142,7 +142,7 @@ export default function Inventario() {
       const steamId = localStorage.getItem('steamId');
       if (!steamId) return;
       try {
-        const data = await fetchSteamInventory(steamId);
+        const data = await getSteamInventory(steamId);
         // data.assets = lista de itens, data.descriptions = detalhes
         const items = data.assets.map((asset: any) => {
           const desc = data.descriptions.find((d: any) => d.classid === asset.classid && d.instanceid === asset.instanceid);
