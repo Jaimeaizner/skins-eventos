@@ -106,14 +106,57 @@ app.get('/api/steam/user/:steamId', async (req, res) => {
   try {
     const { steamId } = req.params;
     
+    // Se não temos STEAM_API_KEY, usar a API pública do Steam Community
     if (!process.env.STEAM_API_KEY) {
-      console.error('STEAM_API_KEY não configurada');
-      return res.status(500).json({ 
-        error: 'STEAM_API_KEY não configurada',
-        success: false 
-      });
+      console.log('STEAM_API_KEY não configurada, usando API pública do Steam Community');
+      
+      // Usar a API pública do Steam Community para obter dados básicos
+      const response = await fetch(
+        `https://steamcommunity.com/profiles/${steamId}/?xml=1`
+      );
+      
+      if (!response.ok) {
+        console.error(`Erro HTTP ao buscar perfil: ${response.status}`);
+        return res.status(response.status).json({ 
+          error: `Erro HTTP: ${response.status}`,
+          success: false 
+        });
+      }
+      
+      const xmlText = await response.text();
+      
+      // Extrair dados básicos do XML
+      const avatarMatch = xmlText.match(/<avatarFull><!\[CDATA\[(.*?)\]\]><\/avatarFull>/);
+      const nameMatch = xmlText.match(/<steamID><!\[CDATA\[(.*?)\]\]><\/steamID>/);
+      const realNameMatch = xmlText.match(/<realname><!\[CDATA\[(.*?)\]\]><\/realname>/);
+      
+      const userData = {
+        response: {
+          players: [{
+            steamid: steamId,
+            personaname: nameMatch ? nameMatch[1] : `Steam:${steamId}`,
+            realname: realNameMatch ? realNameMatch[1] : '',
+            avatarfull: avatarMatch ? avatarMatch[1] : 'https://steamcommunity-a.akamaihd.net/public/images/avatars/fe/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
+            avatarmedium: avatarMatch ? avatarMatch[1].replace('_full.jpg', '_medium.jpg') : 'https://steamcommunity-a.akamaihd.net/public/images/avatars/fe/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg',
+            avatar: avatarMatch ? avatarMatch[1].replace('_full.jpg', '.jpg') : 'https://steamcommunity-a.akamaihd.net/public/images/avatars/fe/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg',
+            personastate: 1,
+            profileurl: `https://steamcommunity.com/profiles/${steamId}/`,
+            timecreated: 0,
+            lastlogoff: 0,
+            commentpermission: 1,
+            gameextrainfo: '',
+            gameid: '',
+            loccountrycode: '',
+            locstatecode: '',
+            loccityid: 0
+          }]
+        }
+      };
+      
+      return res.json(userData);
     }
     
+    // Se temos STEAM_API_KEY, usar a API oficial
     const response = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${steamId}`
     );
