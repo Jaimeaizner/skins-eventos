@@ -384,6 +384,12 @@ export default function Leiloes() {
               Filtros
             </button>
             <button
+              onClick={() => navigate('/historico-leiloes')}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all duration-300"
+            >
+              Histórico
+            </button>
+            <button
               onClick={() => navigate('/criar-leilao')}
               className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300"
             >

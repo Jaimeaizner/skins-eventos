@@ -193,12 +193,26 @@ app.get('/api/steam/user/:steamId', async (req, res) => {
 app.get('/api/steam/inventory/:steamId/:appId', async (req, res) => {
   try {
     const { steamId, appId } = req.params;
+    
+    console.log(`[INVENTORY] Buscando inventário para Steam ID: ${steamId}, App ID: ${appId}`);
+    
     const response = await fetch(
       `https://steamcommunity.com/inventory/${steamId}/${appId}/2?l=portuguese&count=5000`
     );
     
     if (!response.ok) {
-      console.error(`Erro HTTP ao buscar inventário: ${response.status}`);
+      console.error(`[INVENTORY] Erro HTTP ao buscar inventário: ${response.status}`);
+      
+      // Se for erro 400, provavelmente é inventário privado
+      if (response.status === 400) {
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Inventário privado ou não encontrado'
+        });
+      }
+      
       return res.status(response.status).json({ 
         error: `Erro HTTP: ${response.status}`,
         success: false 
@@ -208,19 +222,39 @@ app.get('/api/steam/inventory/:steamId/:appId', async (req, res) => {
     const data = await response.json();
     
     if (!data) {
-      console.error('Resposta vazia do inventário Steam');
-      return res.status(500).json({ 
-        error: 'Resposta vazia do inventário Steam',
-        success: false 
+      console.error('[INVENTORY] Resposta vazia do inventário Steam');
+      return res.status(200).json({ 
+        success: true,
+        descriptions: [],
+        assets: [],
+        message: 'Inventário vazio'
       });
     }
     
-    res.json(data);
+    // Verificar se o inventário está vazio
+    if (!data.descriptions || !data.assets || data.descriptions.length === 0 || data.assets.length === 0) {
+      console.log('[INVENTORY] Inventário vazio para Steam ID:', steamId);
+      return res.status(200).json({ 
+        success: true,
+        descriptions: [],
+        assets: [],
+        message: 'Inventário vazio'
+      });
+    }
+    
+    console.log(`[INVENTORY] Inventário carregado com sucesso: ${data.descriptions.length} descrições, ${data.assets.length} assets`);
+    
+    res.json({
+      success: true,
+      ...data
+    });
   } catch (error) {
-    console.error('Erro ao buscar inventário:', error);
-    res.status(500).json({ 
-      error: 'Erro ao buscar inventário',
-      success: false 
+    console.error('[INVENTORY] Erro ao buscar inventário:', error);
+    res.status(200).json({ 
+      success: true,
+      descriptions: [],
+      assets: [],
+      message: 'Erro ao carregar inventário'
     });
   }
 });

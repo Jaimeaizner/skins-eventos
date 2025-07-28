@@ -311,7 +311,7 @@ export default function Rifas() {
   ]);
 
   // Filtrar eventos pelo jogo selecionado
-  const eventosFiltrados = eventos.filter(e => e.game === selectedGame);
+  const eventosFiltered = eventos.filter(e => e.game === selectedGame);
 
   // Função para participar de um evento
   const handleParticipate = (eventoId: string, tickets: number) => {
@@ -389,7 +389,7 @@ export default function Rifas() {
 
   // Função para filtrar os eventos conforme os filtros ativos
   function filterEventos() {
-    return eventosFiltrados.filter((evento) => {
+    return eventosFiltered.filter((evento) => {
       // Filtro por raridade
       if (activeFilters.rarity && activeFilters.rarity.length > 0 && !activeFilters.rarity.includes(evento.rarity)) {
         return false;
@@ -462,92 +462,87 @@ export default function Rifas() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className={`transition-all duration-300 ${showFilters ? 'ml-80' : 'ml-0'}`}>
-        <div className="container mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-black text-white mb-2">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-red-400">
-                    EVENTOS
-                  </span>
-                </h1>
-                <p className="text-gray-300 text-lg">
-                  Participe dos melhores eventos promocionais de skins do CS2
-                </p>
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300 flex items-center space-x-2 relative"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      {/* Header com informações do usuário */}
+      <div className="bg-black bg-opacity-50 backdrop-blur-md border-b border-white border-opacity-20">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center space-x-4">
+            <img
+              src={steamUser?.avatarfull}
+              alt="Avatar"
+              className="w-16 h-16 rounded-full border-2 border-purple-500"
+            />
+            <div>
+              <h1 className="text-2xl font-bold text-white">{steamUser?.personaname}</h1>
+              <p className="text-gray-300">Eventos Ativos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Header com filtros */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <h2 className="text-3xl font-bold text-white">Eventos</h2>
+            <span className="text-gray-400">({eventosFiltered.length} itens)</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowFilters(true)}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
+            >
+              Filtros
+            </button>
+            <button
+              onClick={() => navigate('/historico-eventos')}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all duration-300"
+            >
+              Histórico
+            </button>
+            <button
+              onClick={() => navigate('/criar-rifa')}
+              className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300"
+            >
+              Criar Evento
+            </button>
+          </div>
+        </div>
+
+        {/* Notification */}
+        {notification && (
+          <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-2xl backdrop-blur-md border border-white border-opacity-20 transition-all duration-300 transform ${
+            notification.type === 'success' 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
+              : 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
+          }`}>
+            <div className="flex items-center space-x-3">
+              {notification.type === 'success' ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span>Filtros</span>
-                {Object.keys(activeFilters).length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {Object.keys(activeFilters).length}
-                  </span>
-                )}
-              </button>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              <span className="font-semibold">{notification.message}</span>
             </div>
           </div>
+        )}
 
-          {/* Notification */}
-          {notification && (
-            <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-2xl backdrop-blur-md border border-white border-opacity-20 transition-all duration-300 transform ${
-              notification.type === 'success' 
-                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
-                : 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
-            }`}>
-              <div className="flex items-center space-x-3">
-                {notification.type === 'success' ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                )}
-                <span className="font-semibold">{notification.message}</span>
-              </div>
+        {/* Loading state */}
+        {loading && (
+          <div className="flex justify-center items-center py-16">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-white text-lg">Carregando eventos...</p>
             </div>
-          )}
-
-          {/* Header com título e informações do usuário */}
-          <div className="w-full flex justify-center mb-6 mt-2">
-            <img src="/image/Rifas.png" alt="Evento Promocional" className="max-h-32 md:max-h-40 object-contain drop-shadow-lg" />
           </div>
-          
-          {/* Informações do usuário */}
-          {steamUser && (
-            <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center space-x-3 bg-white/10 rounded-xl px-4 py-2 border border-white/20">
-                <img 
-                  src={steamUser.avatarfull} 
-                  alt={steamUser.personaname}
-                  className="w-8 h-8 rounded-full border-2 border-white/20"
-                />
-                <span className="text-white font-semibold">{steamUser.personaname}</span>
-              </div>
-            </div>
-          )}
-          
-          {/* Loading state */}
-          {loading && (
-            <div className="flex justify-center items-center py-16">
-              <div className="text-center">
-                <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-white text-lg">Carregando skins da Steam...</p>
-              </div>
-            </div>
-          )}
+        )}
 
-          {/* Cards de Eventos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16">
+        {/* Grid de Eventos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filterEventos().map((evento) => (
               <div
                 key={evento.id}
@@ -859,7 +854,7 @@ export default function Rifas() {
         pageType="rifas"
       />
 
-      {eventosFiltrados.length === 0 && (
+      {eventosFiltered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16">
           <span className="text-2xl font-bold text-white mb-4 text-center">nenhum item disponivel no momento<br/>aproveite e coloque o seu item!</span>
           <button
