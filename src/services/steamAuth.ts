@@ -58,16 +58,39 @@ function extractSteamIdFromUrl(): string | null {
 // Função para buscar dados do usuário Steam via API do servidor
 export const getSteamUserData = async (steamId: string) => {
   try {
+    if (!steamId) {
+      console.warn('Steam ID não fornecido para getSteamUserData');
+      return null;
+    }
+    
     const response = await fetch(`/api/steam/user/${steamId}`);
+    
+    if (!response.ok) {
+      console.error(`Erro HTTP ao buscar dados do usuário: ${response.status}`);
+      return null;
+    }
+    
     const data = await response.json();
+    
+    if (!data) {
+      console.error('Resposta vazia ao buscar dados do usuário');
+      return null;
+    }
+    
+    if (data.error) {
+      console.error('Erro retornado pela API:', data.error);
+      return null;
+    }
     
     if (data.response && data.response.players && data.response.players.length > 0) {
       return data.response.players[0];
     }
-    throw new Error('Usuário não encontrado');
+    
+    console.warn('Usuário não encontrado na resposta da API');
+    return null;
   } catch (error) {
     console.error('Erro ao buscar dados do usuário Steam:', error);
-    throw error;
+    return null;
   }
 };
 

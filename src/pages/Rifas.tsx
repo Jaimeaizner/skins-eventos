@@ -67,16 +67,21 @@ export default function Rifas() {
       try {
         setLoading(true);
         
+        console.log('[RIFAS] Verificando steamUser:', steamUser);
+        
         if (!steamUser?.steamid) {
-          console.warn('Steam User não disponível');
+          console.warn('[RIFAS] Steam User não disponível');
           setEventos([]);
           return;
         }
         
+        console.log('[RIFAS] Buscando inventário para Steam ID:', steamUser.steamid);
         const realSkins = await getRealSteamInventoryForEvents(steamUser.steamid);
         
-        if (realSkins.length === 0) {
-          console.warn('Nenhuma skin encontrada');
+        console.log('[RIFAS] Skins encontradas:', realSkins.length);
+        
+        if (!realSkins || realSkins.length === 0) {
+          console.warn('[RIFAS] Nenhuma skin encontrada');
           setEventos([]);
           return;
         }
@@ -109,9 +114,10 @@ export default function Rifas() {
           condition: skin.condition
         }));
         
+        console.log('[RIFAS] Eventos criados:', realEventos.length);
         setEventos(realEventos);
       } catch (error) {
-        console.error('Erro ao carregar dados reais:', error);
+        console.error('[RIFAS] Erro ao carregar dados reais:', error);
         setEventos([]);
       } finally {
         setLoading(false);

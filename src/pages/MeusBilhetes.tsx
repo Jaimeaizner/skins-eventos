@@ -40,15 +40,30 @@ export default function MeusBilhetes() {
 
   useEffect(() => {
     async function loadTickets() {
+      console.log('[MEUS BILHETES] Verificando steamUser:', steamUser);
+      
       if (!steamUser?.steamid) {
+        console.warn('[MEUS BILHETES] Steam User não disponível');
+        setTickets([]);
         setLoading(false);
         return;
       }
+      
       setLoading(true);
       try {
+        console.log('[MEUS BILHETES] Buscando inventário para Steam ID:', steamUser.steamid);
         const realSkins = await getRealSteamInventoryForEvents(steamUser.steamid);
-        setTickets(realSkins);
-      } catch (e) {
+        
+        console.log('[MEUS BILHETES] Skins encontradas:', realSkins.length);
+        
+        if (!realSkins || realSkins.length === 0) {
+          console.warn('[MEUS BILHETES] Nenhuma skin encontrada');
+          setTickets([]);
+        } else {
+          setTickets(realSkins);
+        }
+      } catch (error) {
+        console.error('[MEUS BILHETES] Erro ao carregar tickets:', error);
         setTickets([]);
       } finally {
         setLoading(false);
@@ -186,7 +201,7 @@ export default function MeusBilhetes() {
                     {/* Stickers */}
                     {ticket.stickers && ticket.stickers.length > 0 && (
                       <div className="absolute bottom-2 left-2 flex flex-wrap gap-1 max-w-20">
-                        {ticket.stickers.slice(0, 4).map((sticker, index) => (
+                        {ticket.stickers.slice(0, 4).map((sticker: any, index: number) => (
                           <img
                             key={index}
                             src={sticker.image}

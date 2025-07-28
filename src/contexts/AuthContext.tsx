@@ -8,7 +8,7 @@ import {
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import { initiateSteamLogin, processSteamCallback, type SteamUser } from '../services/steamAuth';
+import { initiateSteamLogin, processSteamCallback, getSteamUserData, type SteamUser } from '../services/steamAuth';
 import { getFirestore, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 interface AuthContextType {
@@ -113,11 +113,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Verificar se há Steam ID salvo no localStorage
           const steamId = localStorage.getItem('steamId');
           if (steamId) {
+            console.log('[AUTH CONTEXT] Carregando dados do Steam para ID:', steamId);
             const steamUserData = await getSteamUserData(steamId);
-            setSteamUser(steamUserData);
+            if (steamUserData) {
+              console.log('[AUTH CONTEXT] Dados do Steam carregados:', steamUserData);
+              setSteamUser(steamUserData);
+            } else {
+              console.warn('[AUTH CONTEXT] Não foi possível carregar dados do Steam');
+              setSteamUser(null);
+            }
+          } else {
+            console.log('[AUTH CONTEXT] Nenhum Steam ID encontrado no localStorage');
+            setSteamUser(null);
           }
         } catch (error) {
           console.error('Erro ao carregar dados do Steam:', error);
+          setSteamUser(null);
         }
       } else {
         setSteamUser(null);

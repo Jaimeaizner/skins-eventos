@@ -42,7 +42,11 @@ interface Auction {
   }>;
   nameTag?: string;
   condition?: string;
-  pendant?: string;
+  pendant?: {
+    id: string;
+    name: string;
+    icon_url: string;
+  };
 }
 
 export default function Leiloes() {
@@ -68,7 +72,25 @@ export default function Leiloes() {
     async function loadRealData() {
       try {
         setLoading(true);
-        const realSkins = await getRealSteamInventoryForEvents(steamUser!.steamid);
+        
+        console.log('[LEILOES] Verificando steamUser:', steamUser);
+        
+        if (!steamUser?.steamid) {
+          console.warn('[LEILOES] Steam User não disponível');
+          setAuctions([]);
+          return;
+        }
+        
+        console.log('[LEILOES] Buscando inventário para Steam ID:', steamUser.steamid);
+        const realSkins = await getRealSteamInventoryForEvents(steamUser.steamid);
+        
+        console.log('[LEILOES] Skins encontradas:', realSkins.length);
+        
+        if (!realSkins || realSkins.length === 0) {
+          console.warn('[LEILOES] Nenhuma skin encontrada');
+          setAuctions([]);
+          return;
+        }
         
         // Converter skins reais em objetos Auction
         const auctionData: Auction[] = realSkins.map((skin: any, index: number) => ({
@@ -108,9 +130,10 @@ export default function Leiloes() {
           pendant: skin.pendant
         }));
 
+        console.log('[LEILOES] Leilões criados:', auctionData.length);
         setAuctions(auctionData);
       } catch (error) {
-        console.error('Erro ao carregar dados reais:', error);
+        console.error('[LEILOES] Erro ao carregar dados reais:', error);
         setAuctions([]);
       } finally {
         setLoading(false);
@@ -119,6 +142,9 @@ export default function Leiloes() {
 
     if (steamUser?.steamid) {
       loadRealData();
+    } else {
+      console.log('[LEILOES] Steam User não disponível, definindo loading como false');
+      setLoading(false);
     }
   }, [steamUser?.steamid]);
 

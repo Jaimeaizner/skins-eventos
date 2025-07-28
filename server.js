@@ -105,14 +105,44 @@ app.get('/api/auth/steam/callback', async (req, res) => {
 app.get('/api/steam/user/:steamId', async (req, res) => {
   try {
     const { steamId } = req.params;
+    
+    if (!process.env.STEAM_API_KEY) {
+      console.error('STEAM_API_KEY não configurada');
+      return res.status(500).json({ 
+        error: 'STEAM_API_KEY não configurada',
+        success: false 
+      });
+    }
+    
     const response = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${steamId}`
     );
+    
+    if (!response.ok) {
+      console.error(`Erro HTTP: ${response.status}`);
+      return res.status(response.status).json({ 
+        error: `Erro HTTP: ${response.status}`,
+        success: false 
+      });
+    }
+    
     const data = await response.json();
+    
+    if (!data || !data.response) {
+      console.error('Resposta inválida da API Steam');
+      return res.status(500).json({ 
+        error: 'Resposta inválida da API Steam',
+        success: false 
+      });
+    }
+    
     res.json(data);
   } catch (error) {
     console.error('Erro ao buscar dados do usuário:', error);
-    res.status(500).json({ error: 'Erro ao buscar dados do usuário' });
+    res.status(500).json({ 
+      error: 'Erro ao buscar dados do usuário',
+      success: false 
+    });
   }
 });
 
@@ -123,11 +153,32 @@ app.get('/api/steam/inventory/:steamId/:appId', async (req, res) => {
     const response = await fetch(
       `https://steamcommunity.com/inventory/${steamId}/${appId}/2?l=portuguese&count=5000`
     );
+    
+    if (!response.ok) {
+      console.error(`Erro HTTP ao buscar inventário: ${response.status}`);
+      return res.status(response.status).json({ 
+        error: `Erro HTTP: ${response.status}`,
+        success: false 
+      });
+    }
+    
     const data = await response.json();
+    
+    if (!data) {
+      console.error('Resposta vazia do inventário Steam');
+      return res.status(500).json({ 
+        error: 'Resposta vazia do inventário Steam',
+        success: false 
+      });
+    }
+    
     res.json(data);
   } catch (error) {
     console.error('Erro ao buscar inventário:', error);
-    res.status(500).json({ error: 'Erro ao buscar inventário' });
+    res.status(500).json({ 
+      error: 'Erro ao buscar inventário',
+      success: false 
+    });
   }
 });
 
@@ -138,11 +189,32 @@ app.get('/api/steam/market/:marketHashName', async (req, res) => {
     const response = await fetch(
       `https://steamcommunity.com/market/priceoverview/?appid=730&currency=7&market_hash_name=${encodeURIComponent(marketHashName)}`
     );
+    
+    if (!response.ok) {
+      console.error(`Erro HTTP ao buscar preços: ${response.status}`);
+      return res.status(response.status).json({ 
+        error: `Erro HTTP: ${response.status}`,
+        success: false 
+      });
+    }
+    
     const data = await response.json();
+    
+    if (!data) {
+      console.error('Resposta vazia do mercado Steam');
+      return res.status(500).json({ 
+        error: 'Resposta vazia do mercado Steam',
+        success: false 
+      });
+    }
+    
     res.json(data);
   } catch (error) {
     console.error('Erro ao buscar preços:', error);
-    res.status(500).json({ error: 'Erro ao buscar preços' });
+    res.status(500).json({ 
+      error: 'Erro ao buscar preços',
+      success: false 
+    });
   }
 });
 
