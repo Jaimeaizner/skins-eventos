@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
 import FiltersSidebar from '../components/FiltersSidebar';
 import BidWarningModal from '../components/BidWarningModal';
+import { getRealSteamInventoryForEvents } from '../services/steamAuth';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 interface Auction {
   id: string;
@@ -34,6 +36,16 @@ interface Auction {
     timestamp: Date;
   }>;
   game: 'cs2' | 'dota2' | 'rust' | 'teamfortress2'; // Adicionado campo game
+  
+  // Novos campos para dados reais da Steam
+  marketHashName?: string;
+  stickers?: Array<{
+    name: string;
+    image: string;
+  }>;
+  nameTag?: string;
+  condition?: string;
+  pendant?: string;
 }
 
 export default function Leiloes() {
@@ -52,7 +64,7 @@ export default function Leiloes() {
   const [lastMsgTime, setLastMsgTime] = useState<{ [auctionId: string]: number }>({});
   const [showBidWarning, setShowBidWarning] = useState(false);
   const [pendingBid, setPendingBid] = useState<{ auctionId: string; amount: number } | null>(null);
-
+  const [loading, setLoading] = useState(true);
   const [auctions, setAuctions] = useState<Auction[]>([
     {
       id: '1',
@@ -212,6 +224,61 @@ export default function Leiloes() {
       game: 'cs2'
     }
   ]);
+
+  // Carregar dados reais da Steam
+  useEffect(() => {
+    async function loadRealData() {
+      if (!steamUser?.steamid) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const realSkins = await getRealSteamInventoryForEvents(steamUser.steamid);
+        
+        // Converter skins reais para formato de leilões
+        const realAuctions: Auction[] = realSkins.map((skin, index) => ({
+          id: `real-auction-${index}`,
+          name: skin.name,
+          price: skin.price,
+          image: skin.image,
+          participants: Math.floor(Math.random() * 50) + 1,
+          currentBid: Math.floor(skin.price * 0.8),
+          minBid: Math.floor(skin.price * 0.1),
+          endTime: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000), // 7 dias aleatórios
+          rarity: skin.rarity as any,
+          isFavorited: false,
+          wear: skin.wear || 0,
+          steamPrice: skin.price,
+          isHighlighted: Math.random() > 0.8, // 20% chance de ser destacado
+          creator: {
+            steamId: steamUser.steamid,
+            nickname: steamUser.personaname || 'Usuário Steam',
+            avatar: steamUser.avatarfull || '',
+            totalAuctions: Math.floor(Math.random() * 100) + 1
+          },
+          biddersList: [],
+          game: 'cs2',
+          marketHashName: skin.marketHashName,
+          stickers: skin.stickers,
+          nameTag: skin.nameTag,
+          condition: skin.condition,
+          pendant: skin.pendant
+        }));
+
+        setAuctions(realAuctions);
+      } catch (error) {
+        console.error('Erro ao carregar dados reais:', error);
+        // Fallback para dados mock se a API falhar
+        // Manter os dados existentes em caso de erro
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadRealData();
+  }, [steamUser?.steamid]);
 
   // Filtrar leilões pelo jogo selecionado
   const auctionsFiltered = auctions.filter(a => a.game === selectedGame);
@@ -482,9 +549,51 @@ export default function Leiloes() {
     return 'text-green-400';
   }
 
+  // Função para obter URL da imagem da skin
+  const getSkinImageUrl = (marketHashName: string) => {
+    return `https://community.cloudflare.steamstatic.com/economy/image/${marketHashName}`;
+  };
+
+  // Função para obter URL da imagem do sticker
+  const getStickerImageUrl = (stickerName: string) => {
+    return `https://community.cloudflare.steamstatic.com/economy/image/${stickerName}`;
+  };
+
+  // Função para obter URL da imagem do pendant
+  const getPendantImageUrl = (pendantName: string) => {
+    return `https://community.cloudflare.steamstatic.com/economy/image/${pendantName}`;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className={`transition-all duration-300 ${showFilters ? 'ml-80' : 'ml-0'}`}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      {/* Header com informações do usuário */}
+      {steamUser && (
+        <div className="bg-white bg-opacity-10 backdrop-blur-md border-b border-white border-opacity-20 p-4 mb-6">
+          <div className="flex items-center justify-center space-x-4">
+            <img 
+              src={steamUser.avatarfull} 
+              alt="Avatar Steam"
+              className="w-12 h-12 rounded-full border-2 border-purple-500"
+            />
+            <div className="text-center">
+              <div className="text-white font-bold text-lg">{steamUser.personaname}</div>
+              <div className="text-gray-300 text-sm">Steam ID: {steamUser.steamid}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
+          <div className="text-white text-xl font-semibold mb-2">Carregando leilões da Steam</div>
+          <div className="text-gray-400 text-sm">Isso pode demorar um pouco</div>
+        </div>
+      )}
+
+      {/* Conteúdo principal */}
+      {!loading && (
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
@@ -574,6 +683,39 @@ export default function Leiloes() {
                       alt={auction.name}
                       className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-500"
                     />
+                    
+                    {/* Stickers */}
+                    {auction.stickers && auction.stickers.length > 0 && (
+                      <div className="absolute bottom-2 left-2 flex flex-wrap gap-1 max-w-20">
+                        {auction.stickers.slice(0, 4).map((sticker, index) => (
+                          <img
+                            key={index}
+                            src={getStickerImageUrl(sticker.image)}
+                            alt={sticker.name}
+                            className="w-4 h-4 object-contain"
+                            title={sticker.name}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Pendant */}
+                    {auction.pendant && (
+                      <div className="absolute top-2 left-2">
+                        <img
+                          src={getPendantImageUrl(auction.pendant)}
+                          alt="Pendant"
+                          className="w-6 h-6 object-contain"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Name Tag */}
+                    {auction.nameTag && (
+                      <div className="absolute top-2 right-2 bg-blue-500 text-white px-1 py-0.5 rounded text-xs font-bold">
+                        NT
+                      </div>
+                    )}
                   </div>
                   
                   {/* Raridade e Tags */}
@@ -638,7 +780,7 @@ export default function Leiloes() {
                       }}
                       disabled={timeLeft[auction.id] === 'Finalizado'}
                     >
-                      {timeLeft[auction.id] === 'Finalizado' ? 'FINALIZADO' : 'VER LEILÃO'}
+                      {timeLeft[auction.id] === 'Finalizado' ? 'FINALIZADO' : 'DAR LANCE'}
                     </button>
                   </div>
                 </div>
