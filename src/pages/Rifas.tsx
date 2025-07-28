@@ -64,53 +64,62 @@ export default function Rifas() {
   // Carregar dados reais da Steam quando o componente montar
   useEffect(() => {
     const loadRealData = async () => {
-      if (currentUser?.uid) {
-        try {
-          setLoading(true);
-          const realSkins = await getRealSteamInventoryForEvents(currentUser.uid);
-          
-          // Converter skins reais para eventos
-          const realEventos = realSkins.slice(0, 10).map((skin, index) => ({
-            id: `real-${index}`,
-            name: skin.name,
-            price: skin.steamPrice,
-            image: skin.icon_url,
-            participants: Math.floor(Math.random() * 50) + 10,
-            maxParticipants: 100,
-            rarity: skin.rarity,
-            isFavorited: false,
-            wear: skin.wear || 0.15,
-            steamPrice: skin.steamPrice,
-            ticketPrice: skin.ticketPrice,
-            isHighlighted: index < 3,
-            creator: {
-              steamId: currentUser.uid,
-              nickname: steamUser?.personaname || 'Usuário Steam',
-              avatar: steamUser?.avatarfull || '',
-              totalRaffles: Math.floor(Math.random() * 100) + 10
-            },
-            participantsList: [],
-            game: 'cs2' as const,
-            marketHashName: skin.market_hash_name,
-            stickers: skin.stickers || [],
-            nameTag: skin.name_tag,
-            condition: skin.condition
-          }));
-          
-          setEventos(realEventos);
-        } catch (error) {
-          console.error('Erro ao carregar dados reais:', error);
-          // Fallback para dados mock se falhar
-        } finally {
-          setLoading(false);
+      try {
+        setLoading(true);
+        
+        if (!steamUser?.steamid) {
+          console.warn('Steam User não disponível');
+          setEventos([]);
+          return;
         }
-      } else {
+        
+        const realSkins = await getRealSteamInventoryForEvents(steamUser.steamid);
+        
+        if (realSkins.length === 0) {
+          console.warn('Nenhuma skin encontrada');
+          setEventos([]);
+          return;
+        }
+        
+        // Converter skins reais para eventos
+        const realEventos = realSkins.slice(0, 10).map((skin, index) => ({
+          id: `real-${index}`,
+          name: skin.name || 'Skin Desconhecida',
+          price: skin.steamPrice || 0,
+          image: skin.icon_url || '',
+          participants: Math.floor(Math.random() * 50) + 10,
+          maxParticipants: 100,
+          rarity: skin.rarity || 'mil-spec',
+          isFavorited: false,
+          wear: skin.wear || 0.15,
+          steamPrice: skin.steamPrice || 0,
+          ticketPrice: skin.ticketPrice || 1,
+          isHighlighted: index < 3,
+          creator: {
+            steamId: steamUser.steamid,
+            nickname: steamUser.personaname || 'Usuário Steam',
+            avatar: steamUser.avatarfull || '',
+            totalRaffles: Math.floor(Math.random() * 100) + 10
+          },
+          participantsList: [],
+          game: 'cs2' as const,
+          marketHashName: skin.market_hash_name,
+          stickers: skin.stickers || [],
+          nameTag: skin.name_tag,
+          condition: skin.condition
+        }));
+        
+        setEventos(realEventos);
+      } catch (error) {
+        console.error('Erro ao carregar dados reais:', error);
+        setEventos([]);
+      } finally {
         setLoading(false);
       }
     };
     
     loadRealData();
-  }, [currentUser, steamUser]);
+  }, [steamUser?.steamid]);
 
   // Dados mock como fallback
   const [eventos, setEventos] = useState<EventoPromocional[]>([

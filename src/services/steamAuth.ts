@@ -75,15 +75,28 @@ export const getSteamUserData = async (steamId: string) => {
 export const getSteamInventory = async (steamId: string, appId: string = '730') => {
   try {
     const response = await fetch(`/api/steam/inventory/${steamId}/${appId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    
+    if (!data) {
+      throw new Error('Resposta vazia da API');
+    }
     
     if (data.success && data.descriptions && data.assets) {
       return processInventoryData(data);
     }
-    throw new Error('Inventário não encontrado ou privado');
+    
+    // Se não há sucesso, retornar array vazio em vez de erro
+    console.warn('Inventário não encontrado ou privado para Steam ID:', steamId);
+    return [];
   } catch (error) {
     console.error('Erro ao buscar inventário Steam:', error);
-    throw error;
+    // Retornar array vazio em vez de lançar erro
+    return [];
   }
 };
 
@@ -91,7 +104,16 @@ export const getSteamInventory = async (steamId: string, appId: string = '730') 
 export const getSteamMarketPrice = async (marketHashName: string) => {
   try {
     const response = await fetch(`/api/steam/market/${encodeURIComponent(marketHashName)}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    
+    if (!data) {
+      throw new Error('Resposta vazia da API');
+    }
     
     if (data.success) {
       return {
@@ -100,10 +122,22 @@ export const getSteamMarketPrice = async (marketHashName: string) => {
         median_price: data.median_price
       };
     }
-    throw new Error('Preço não encontrado');
+    
+    // Se não há sucesso, retornar preço padrão
+    console.warn('Preço não encontrado para:', marketHashName);
+    return {
+      price: 'R$ 0,00',
+      volume: 0,
+      median_price: 'R$ 0,00'
+    };
   } catch (error) {
     console.error('Erro ao buscar preço do mercado Steam:', error);
-    throw error;
+    // Retornar preço padrão em vez de lançar erro
+    return {
+      price: 'R$ 0,00',
+      volume: 0,
+      median_price: 'R$ 0,00'
+    };
   }
 };
 
@@ -246,15 +280,30 @@ export const getSteamSkinData = async (marketHashName: string) => {
 // Função para buscar inventário real do usuário e criar eventos
 export const getRealSteamInventoryForEvents = async (steamId: string) => {
   try {
+    if (!steamId) {
+      console.warn('Steam ID não fornecido');
+      return [];
+    }
+
     const inventory = await getSteamInventory(steamId, '730'); // CS2
+    
+    if (!inventory || inventory.length === 0) {
+      console.warn('Inventário vazio ou não encontrado para Steam ID:', steamId);
+      return [];
+    }
     
     // Filtrar apenas skins que podem ser usadas em eventos
     const eligibleSkins = inventory.filter((item: any) => {
-      return item.type === 'weapon' && 
+      return item && item.type === 'weapon' && 
              item.marketable && 
              item.tradeable &&
              item.rarity !== 'consumer'; // Excluir skins muito comuns
     });
+    
+    if (eligibleSkins.length === 0) {
+      console.warn('Nenhuma skin elegível encontrada para Steam ID:', steamId);
+      return [];
+    }
     
     // Buscar preços do mercado para cada skin
     const skinsWithPrices = await Promise.all(
@@ -263,6 +312,9 @@ export const getRealSteamInventoryForEvents = async (steamId: string) => {
           const marketPrice = await getSteamMarketPrice(skin.market_hash_name);
           return {
             ...skin,
+            name: skin.name || 'Skin Desconhecida',
+            icon_url: skin.icon_url || '',
+            market_price: marketPrice.price || 'R$ 0,00',
             steamPrice: parseFloat(marketPrice.price?.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
             ticketPrice: Math.max(1, Math.floor((parseFloat(marketPrice.price?.replace(/[^\d.,]/g, '').replace(',', '.')) || 0) / 100))
           };
@@ -270,6 +322,9 @@ export const getRealSteamInventoryForEvents = async (steamId: string) => {
           console.error(`Erro ao buscar preço para ${skin.market_hash_name}:`, error);
           return {
             ...skin,
+            name: skin.name || 'Skin Desconhecida',
+            icon_url: skin.icon_url || '',
+            market_price: 'R$ 0,00',
             steamPrice: 0,
             ticketPrice: 1
           };
@@ -280,7 +335,8 @@ export const getRealSteamInventoryForEvents = async (steamId: string) => {
     return skinsWithPrices;
   } catch (error) {
     console.error('Erro ao buscar inventário para eventos:', error);
-    throw error;
+    // Retornar array vazio em vez de lançar erro
+    return [];
   }
 };
 

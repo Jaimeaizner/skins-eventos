@@ -103,15 +103,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('[AUTH CONTEXT] onAuthStateChanged:', user);
       setCurrentUser(user);
-      setLoading(false);
-      // Se o usuário está logado, buscar dados do Steam
-      if (user && user.providerData.some(p => p.providerId === 'custom')) {
-        // Aqui você pode buscar dados do Steam e setar steamUser
-        // Exemplo: setSteamUser({ ... })
+      
+      // Se o usuário está logado, verificar se há dados do Steam
+      if (user) {
+        try {
+          // Verificar se há Steam ID salvo no localStorage
+          const steamId = localStorage.getItem('steamId');
+          if (steamId) {
+            const steamUserData = await getSteamUserData(steamId);
+            setSteamUser(steamUserData);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar dados do Steam:', error);
+        }
+      } else {
+        setSteamUser(null);
       }
+      
+      setLoading(false);
     });
 
     return unsubscribe;
