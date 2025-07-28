@@ -111,7 +111,6 @@ function AppContent() {
           <Route path="/termos-de-uso" element={<Termos />} />
           <Route path="/privacidade" element={<Privacidade />} />
           <Route path="/admin" element={<Admin />} />
-          <Route path="/auth/steam/callback" element={<SteamCallbackHandler />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         <ChatBot />
@@ -130,7 +129,10 @@ function App() {
           <ModalProvider>
             <Router>
               <div className="App">
-                <AppContent />
+                <Routes>
+                  <Route path="/auth/steam/callback" element={<SteamCallbackHandler />} />
+                  <Route path="*" element={<AppContent />} />
+                </Routes>
               </div>
             </Router>
           </ModalProvider>
