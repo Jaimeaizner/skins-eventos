@@ -51,18 +51,29 @@ function AppContent() {
             nome: '', 
             sobrenome: '', 
             nascimento: '', 
-            aceitouTermos: false 
+            aceitouTermos: false,
+            aceitouPrivacidade: false,
+            aceitouInventario: false,
+            onboardingCompleto: false
           });
-          data = { nome: '', sobrenome: '', nascimento: '', aceitouTermos: false };
+          data = { 
+            nome: '', 
+            sobrenome: '', 
+            nascimento: '', 
+            aceitouTermos: false,
+            aceitouPrivacidade: false,
+            aceitouInventario: false,
+            onboardingCompleto: false
+          };
         }
         
-        const obrigatoriosPreenchidos = data.nome && 
-          data.sobrenome && 
-          data.nascimento && 
+        // Verifica se o onboarding foi completado
+        const onboardingCompleto = data.onboardingCompleto && 
           data.aceitouTermos && 
-          (new Date().getFullYear() - new Date(data.nascimento).getFullYear() >= 18);
+          data.aceitouPrivacidade && 
+          data.aceitouInventario;
         
-        setShowFirstLogin(!obrigatoriosPreenchidos);
+        setShowFirstLogin(!onboardingCompleto);
         setCheckedProfile(true);
       } catch (error) {
         console.error('Erro ao verificar perfil:', error);
