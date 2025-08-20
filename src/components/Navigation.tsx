@@ -404,9 +404,8 @@ export default function Navigation() {
           document.body
       )}
       {/* Modal de Notificações */}
-      {showNotifications && createPortal(
-        <NotificationsModal open={showNotifications} onClose={() => setShowNotifications(false)} />,
-        document.body
+      {showNotifications && (
+        <NotificationsModal open={showNotifications} onClose={() => setShowNotifications(false)} />
       )}
     </header>
   );

@@ -81,11 +81,11 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({ open, onClose }
   };
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm" onClick={onClose}></div>
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-2xl bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900 rounded-2xl shadow-2xl p-6 border border-white/20">
+      <div className="relative z-[10000] w-full max-w-2xl bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900 rounded-2xl shadow-2xl p-6 border border-white/20">
         <button className="absolute top-4 right-4 text-white text-2xl font-bold hover:text-pink-400 transition-colors" onClick={onClose}>×</button>
         
         <h2 className="text-2xl font-bold text-white mb-6">Notificações</h2>
