@@ -258,6 +258,17 @@ export default function Navigation() {
                           </div>
                         </div>
                         <div className="p-2 flex flex-col gap-1">
+                          {/* Botão Admin (apenas para admins) */}
+                          {isAdmin && (
+                            <button 
+                              onClick={() => { navigate('/admin-panel'); setShowUserMenu(false); }} 
+                              className="flex items-center space-x-3 px-3 py-2 rounded-lg text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500 hover:bg-opacity-20 transition-all duration-300 w-full border border-yellow-500 border-opacity-30"
+                            >
+                              <span className="text-xl">🎯</span>
+                              <span className="font-bold drop-shadow text-white">Painel Admin</span>
+                            </button>
+                          )}
+                          
                           {useFeature('INVENTARIO') && (
                             <button onClick={() => { navigate('/inventario'); setShowUserMenu(false); }} className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10 transition-all duration-300 w-full">
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
