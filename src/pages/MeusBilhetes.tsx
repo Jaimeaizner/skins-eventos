@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getRealSteamInventoryForEvents } from '../services/steamAuth';
+
+import { useNavigate } from 'react-router-dom';
 
 interface Ticket {
   id: string;
@@ -33,6 +34,7 @@ interface Ticket {
 
 export default function MeusBilhetes() {
   const { steamUser, currentUser, refreshSteamUser } = useAuth();
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'eventos' | 'auctions'>('eventos');
@@ -65,19 +67,16 @@ export default function MeusBilhetes() {
       
       setLoading(true);
       try {
-        console.log('[MEUS BILHETES] Buscando inventário para Steam ID:', steamUser.steamid);
-        const realSkins = await getRealSteamInventoryForEvents(steamUser.steamid);
+        // CORREÇÃO: Não buscar inventário, apenas mostrar estado vazio
+        // Os bilhetes serão baseados em compras reais, não no inventário
+        console.log('[MEUS BILHETES] Verificando bilhetes comprados...');
         
-        console.log('[MEUS BILHETES] Skins encontradas:', realSkins.length);
+        // Por enquanto, não há bilhetes comprados no sistema
+        // Em uma implementação real, aqui buscaríamos bilhetes do Firestore
+        setTickets([]);
         
-        if (!realSkins || realSkins.length === 0) {
-          console.warn('[MEUS BILHETES] Nenhuma skin encontrada');
-          setTickets([]);
-        } else {
-          setTickets(realSkins);
-        }
       } catch (error) {
-        console.error('[MEUS BILHETES] Erro ao carregar tickets:', error);
+        console.error('[MEUS BILHETES] Erro ao carregar bilhetes:', error);
         setTickets([]);
       } finally {
         setLoading(false);
@@ -192,14 +191,37 @@ export default function MeusBilhetes() {
             <div>
               <div className="text-white font-bold text-lg">{steamUser.personaname}</div>
               <div className="text-gray-300 text-sm">Steam ID: {steamUser.steamid}</div>
-            </div>
-          </div>
+        </div>
+        </div>
         )}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
             <div className="text-white text-xl font-semibold mb-2">Carregando seus bilhetes...</div>
             <div className="text-gray-400 text-sm">Isso pode demorar um pouco</div>
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-black text-white mb-4">Nenhum Bilhete Comprado</h1>
+            <p className="text-gray-300 mb-6">
+              Você ainda não comprou bilhetes para nenhum evento.
+            </p>
+            <div className="space-y-4">
+              <p className="text-gray-400 text-sm">
+                Para participar de eventos, você precisa comprar bilhetes primeiro.
+              </p>
+              <button 
+                onClick={() => navigate('/rifas')}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300"
+              >
+                Ver Eventos Disponíveis
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -257,12 +279,12 @@ export default function MeusBilhetes() {
                     }`}>
                       {ticket.rarity.toUpperCase()}
                     </span>
-                  </div>
-                </div>
+                        </div>
+                      </div>
                 <div className="p-4 relative">
                   <h3 className="text-lg font-bold text-white mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 transition-all duration-300">
                     {ticket.name}
-                  </h3>
+                      </h3>
                   <div className="mb-3 space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-300">Valor da Skin:</span>

@@ -10,7 +10,7 @@ export default function Footer() {
           <Link to="/suporte" className="hover:text-white transition">Suporte</Link>
         </div>
         <div className="text-xs text-white/50 text-center md:text-right">
-          © {new Date().getFullYear()} Skins Rifas – Todos os direitos reservados.
+          © {new Date().getFullYear()} Epics Trade – Todos os direitos reservados.
         </div>
       </div>
       <div className="container mx-auto px-4 mt-2">

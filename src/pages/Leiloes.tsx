@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getRealSteamInventoryForEvents } from '../services/steamAuth';
+
 import { useNavigate } from 'react-router-dom';
 import FiltersSidebar from '../components/FiltersSidebar';
 import BidWarningModal from '../components/BidWarningModal';
@@ -67,11 +67,13 @@ export default function Leiloes() {
   const [auctionChats, setAuctionChats] = useState<Record<string, Array<{ user: string; msg: string; time: number }>>>({});
   const [lastMsgTime, setLastMsgTime] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadRealData() {
       try {
         setLoading(true);
+        setError(null);
         
         console.log('[LEILOES] Verificando steamUser:', steamUser);
         
@@ -86,70 +88,30 @@ export default function Leiloes() {
               if (!steamUser?.steamid) {
                 console.warn('[LEILOES] Ainda sem dados do Steam após tentativa de recarregamento');
                 setAuctions([]);
+                setError('Não foi possível carregar dados do Steam. Tente fazer login novamente.');
                 setLoading(false);
               }
             }, 1000);
             return;
           }
           setAuctions([]);
+          setError('Você precisa estar logado via Steam para ver os leilões.');
           setLoading(false);
           return;
         }
         
-        console.log('[LEILOES] Buscando inventário para Steam ID:', steamUser.steamid);
-        const realSkins = await getRealSteamInventoryForEvents(steamUser.steamid);
+        // CORREÇÃO: Não buscar inventário, apenas mostrar estado vazio
+        // Os leilões serão criados pelos usuários, não baseados no inventário
+        console.log('[LEILOES] Verificando leilões disponíveis...');
         
-        console.log('[LEILOES] Skins encontradas:', realSkins.length);
-        
-        if (!realSkins || realSkins.length === 0) {
-          console.warn('[LEILOES] Nenhuma skin encontrada');
-          setAuctions([]);
-          return;
-        }
-        
-        // Converter skins reais em objetos Auction
-        const auctionData: Auction[] = realSkins.map((skin: any, index: number) => ({
-          id: `auction-${index}`,
-          name: skin.name,
-          price: parseFloat(skin.market_price) || 100,
-          image: skin.icon_url,
-          participants: Math.floor(Math.random() * 50) + 1,
-          currentBid: parseFloat(skin.market_price) * 0.8 || 80,
-          minBid: parseFloat(skin.market_price) * 0.1 || 10,
-          endTime: new Date(Date.now() + Math.random() * 86400000 + 3600000), // 1-24 horas
-          rarity: skin.rarity || 'mil-spec',
-          isFavorited: false,
-          wear: skin.wear || 0.15,
-          steamPrice: parseFloat(skin.market_price) || 100,
-          isHighlighted: Math.random() > 0.8,
-          creator: {
-            steamId: steamUser!.steamid,
-            nickname: steamUser!.personaname,
-            avatar: steamUser!.avatarfull,
-            totalAuctions: Math.floor(Math.random() * 20) + 1
-          },
-          biddersList: [
-            {
-              steamId: steamUser!.steamid,
-              nickname: steamUser!.personaname,
-              avatar: steamUser!.avatarfull,
-              bid: parseFloat(skin.market_price) * 0.8 || 80,
-              timestamp: new Date(Date.now() - Math.random() * 3600000)
-            }
-          ],
-          game: 'cs2',
-          marketHashName: skin.market_hash_name,
-          stickers: skin.stickers,
-          nameTag: skin.name_tag,
-          condition: skin.condition,
-          pendant: skin.pendant
-        }));
-
-        console.log('[LEILOES] Leilões criados:', auctionData.length);
-        setAuctions(auctionData);
-      } catch (error) {
-        console.error('[LEILOES] Erro ao carregar dados reais:', error);
+        // Por enquanto, não há leilões criados no sistema
+        // Em uma implementação real, aqui buscaríamos leilões do Firestore
         setAuctions([]);
+        
+      } catch (error) {
+        console.error('[LEILOES] Erro ao carregar dados:', error);
+        setAuctions([]);
+        setError('Erro ao carregar leilões. Tente novamente.');
       } finally {
         setLoading(false);
       }
@@ -259,7 +221,7 @@ export default function Leiloes() {
     if (activeFilters.priceRange) {
       const [min, max] = activeFilters.priceRange.split('-').map(Number);
       filtered = filtered.filter(auction => {
-        const price = auction.currentBid;
+        const price = auction.currentBid || auction.price;
         return price >= min && (max ? price <= max : true);
       });
     }
@@ -269,10 +231,10 @@ export default function Leiloes() {
         filtered.sort((a, b) => a.endTime.getTime() - b.endTime.getTime());
         break;
       case 'price-low':
-        filtered.sort((a, b) => a.currentBid - b.currentBid);
+        filtered.sort((a, b) => (a.currentBid || a.price) - (b.currentBid || b.price));
         break;
       case 'price-high':
-        filtered.sort((a, b) => b.currentBid - a.currentBid);
+        filtered.sort((a, b) => (b.currentBid || b.price) - (a.currentBid || a.price));
         break;
       case 'participants':
         filtered.sort((a, b) => b.participants - a.participants);
@@ -303,102 +265,142 @@ export default function Leiloes() {
         case 'mil-spec':
           baseStyle += ' border-green-500 border-opacity-50';
           break;
-        default:
+        case 'industrial':
           baseStyle += ' border-gray-500 border-opacity-50';
+          break;
+        case 'consumer':
+          baseStyle += ' border-white border-opacity-30';
+          break;
+        default:
+          baseStyle += ' border-gray-500 border-opacity-30';
       }
     }
     
     return baseStyle;
   };
 
-  const getTimeLeftColor = (timeLeft: string) => {
-    if (timeLeft.includes('hora') && parseInt(timeLeft) < 2) return 'text-red-400';
-    if (timeLeft.includes('minuto') && parseInt(timeLeft) < 30) return 'text-orange-400';
-    return 'text-green-400';
-  };
-
-  function getDynamicTimeColor(time: string) {
-    const hours = parseInt(time.split('h')[0]);
-    const minutes = parseInt(time.split('h')[1]?.split('m')[0] || '0');
-    const totalMinutes = hours * 60 + minutes;
-    
-    if (totalMinutes < 30) return 'text-red-400';
-    if (totalMinutes < 120) return 'text-orange-400';
-    return 'text-green-400';
+  // Verificar se usuário está logado
+  if (!currentUser && !steamUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <h1 className="text-3xl font-black mb-4">Acesso Negado</h1>
+          <p className="text-gray-300 mb-6">Você precisa fazer login via Steam para acessar os leilões.</p>
+          <button 
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300"
+          >
+            Voltar ao Login
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  const getSkinImageUrl = (marketHashName: string) => {
-    return `https://community.cloudflare.steamstatic.com/economy/image/${marketHashName}`;
-  };
-
-  const getStickerImageUrl = (stickerName: string) => {
-    return `https://community.cloudflare.steamstatic.com/economy/image/${stickerName}`;
-  };
-
-  const getPendantImageUrl = (pendantName: string) => {
-    return `https://community.cloudflare.steamstatic.com/economy/image/${pendantName}`;
-  };
-
+  // Estado de loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Carregando leilões...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h1 className="text-2xl font-black mb-2">Carregando Leilões...</h1>
+          <p className="text-gray-300">Buscando itens do seu inventário...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado de erro
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-black mb-2">Erro ao Carregar</h1>
+          <p className="text-gray-300 mb-6">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Sem leilões disponíveis
+  if (auctions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center text-white">
+            <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-black mb-4">Nenhum Leilão Disponível</h1>
+            <p className="text-gray-300 mb-6">
+              Não há leilões ativos no momento.
+            </p>
+            <div className="space-y-4">
+              <p className="text-gray-400 text-sm">
+                Os leilões são criados pelos usuários da plataforma. Fique atento aos próximos!
+              </p>
+              <button 
+                onClick={() => navigate('/inventario')}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300"
+              >
+                Ver Meu Inventário
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-      {/* Header com informações do usuário */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Header */}
       <div className="bg-black bg-opacity-50 backdrop-blur-md border-b border-white border-opacity-20">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center space-x-4">
-            <img
-              src={steamUser?.avatarfull}
-              alt="Avatar"
-              className="w-16 h-16 rounded-full border-2 border-purple-500"
-            />
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">{steamUser?.personaname}</h1>
-              <p className="text-gray-300">Leilões Ativos</p>
+              <h1 className="text-3xl font-black text-white">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-red-400">
+                  LEILÕES
+                </span>
+              </h1>
+              <p className="text-gray-300">Leilões ativos da plataforma</p>
             </div>
+            
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300"
+            >
+              {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+            </button>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Header com filtros */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-3xl font-bold text-white">Leilões</h2>
-            <span className="text-gray-400">({auctionsFiltered.length} itens)</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowFilters(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
-            >
-              Filtros
-            </button>
-            <button
-              onClick={() => navigate('/historico-leiloes')}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all duration-300"
-            >
-              Histórico
-            </button>
-            <button
-              onClick={() => navigate('/criar-leilao')}
-              className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300"
-            >
-              Criar Leilão
-            </button>
-          </div>
-        </div>
+        {/* Filtros */}
+        {showFilters && (
+          <FiltersSidebar
+            activeFilters={activeFilters}
+            setActiveFilters={setActiveFilters}
+            onClose={() => setShowFilters(false)}
+          />
+        )}
 
-        {/* Grid de leilões */}
+        {/* Grid de Leilões */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {auctionsFiltered.map((auction) => (
             <div
@@ -406,327 +408,176 @@ export default function Leiloes() {
               className={getCardStyle(auction.rarity, auction.isHighlighted)}
               onClick={() => handleCardClick(auction)}
             >
-              {/* Container da imagem com stickers e pendant */}
-              <div className="relative w-full h-48 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center overflow-hidden mb-4">
-                {/* Imagem principal */}
+              {/* Imagem do item */}
+              <div className="relative mb-4">
                 <img
-                  src={getSkinImageUrl(auction.image)}
+                  src={auction.image}
                   alt={auction.name}
-                  className="max-w-full max-h-full object-contain"
+                  className="w-full h-32 object-contain bg-gray-700 rounded-lg"
                 />
                 
-                                 {/* Stickers (lado esquerdo) */}
-                 {auction.stickers && auction.stickers.length > 0 && (
-                   <div className="absolute left-2 top-2 flex flex-col space-y-1">
-                     {auction.stickers.slice(0, 4).map((sticker: any, stickerIndex: number) => (
-                       <img
-                         key={stickerIndex}
-                         src={getStickerImageUrl(sticker.icon_url || sticker)}
-                         alt="Sticker"
-                         className="w-8 h-8 object-contain"
-                       />
-                     ))}
-                   </div>
-                 )}
-                
-                {/* Pendant (sobre a imagem) */}
-                {auction.pendant && (
-                  <img
-                    src={getPendantImageUrl(auction.pendant.icon_url)}
-                    alt="Pendant"
-                    className="absolute top-2 right-2 w-10 h-10 object-contain"
-                  />
-                )}
-                
-                {/* Indicador de Name Tag */}
-                {auction.nameTag && (
-                  <div className="absolute bottom-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded font-bold">
-                    NT
-                  </div>
-                )}
+                {/* Indicadores */}
+                <div className="absolute top-2 right-2 flex space-x-2">
+                  {auction.isHighlighted && (
+                    <div className="bg-yellow-500 text-black text-xs px-2 py-1 rounded-full font-bold">
+                      DESTAQUE
+                    </div>
+                  )}
+                  {auction.isFavorited && (
+                    <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      ♥
+                    </div>
+                  )}
+                </div>
+              </div>
 
-                {/* Raridade */}
-                <div className="absolute top-2 left-2">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${
-                    auction.rarity === 'covert' ? 'bg-red-600 text-white' :
-                    auction.rarity === 'classified' ? 'bg-purple-600 text-white' :
-                    auction.rarity === 'restricted' ? 'bg-blue-600 text-white' :
-                    auction.rarity === 'mil-spec' ? 'bg-green-600 text-white' :
-                    auction.rarity === 'industrial' ? 'bg-gray-600 text-white' :
-                    'bg-gray-500 text-white'
-                  }`}>
+              {/* Informações do item */}
+              <div className="space-y-2">
+                <h3 className="text-white font-semibold text-sm truncate" title={auction.name}>
+                  {auction.name}
+                </h3>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 text-xs">
                     {auction.rarity.toUpperCase()}
+                  </span>
+                  <span className="text-green-400 text-xs font-bold">
+                    R$ {auction.steamPrice.toLocaleString()}
                   </span>
                 </div>
 
-                {/* Highlight */}
-                {auction.isHighlighted && (
-                  <div className="absolute top-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded font-bold">
-                    DESTAQUE
-                  </div>
-                )}
-              </div>
-
-              {/* Informações do leilão */}
-              <div className="space-y-3">
-                <h3 className="text-white font-semibold truncate">{auction.name}</h3>
-                
                 <div className="flex justify-between items-center">
-                  <div className="text-gray-400 text-sm">
+                  <span className="text-gray-400 text-xs">
                     {auction.participants} participantes
-                  </div>
-                  <div className="text-green-400 font-bold">
-                    R$ {auction.currentBid.toLocaleString()}
-                  </div>
+                  </span>
+                  <span className="text-blue-400 text-xs">
+                    {auction.currentBid > 0 ? `R$ ${auction.currentBid.toLocaleString()}` : 'Sem lances'}
+                  </span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <div className="text-gray-400 text-sm">
-                    Lance mínimo: R$ {auction.minBid.toLocaleString()}
-                  </div>
-                  <div className={`text-sm font-semibold ${getDynamicTimeColor(
-                    Math.floor((auction.endTime.getTime() - Date.now()) / (1000 * 60)).toString()
-                  )}`}>
-                    {Math.floor((auction.endTime.getTime() - Date.now()) / (1000 * 60))}m restantes
-                  </div>
+                <div className="text-gray-400 text-xs">
+                  Termina em: {auction.endTime.toLocaleDateString('pt-BR')}
                 </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleBid(auction.id, auction.currentBid + auction.minBid);
-                  }}
-                  className="w-full py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
-                >
-                  Dar Lance
-                </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Modal de detalhes do leilão */}
-        {selectedAuction && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-start mb-6">
-                <h2 className="text-2xl font-bold text-white">{selectedAuction.name}</h2>
-                <button
-                  onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-white text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Imagem e informações básicas */}
-                <div>
-                  <div className="relative w-full h-64 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center overflow-hidden mb-4">
-                    <img
-                      src={getSkinImageUrl(selectedAuction.image)}
-                      alt={selectedAuction.name}
-                      className="max-w-full max-h-full object-contain"
-                    />
-                    
-                                         {/* Stickers */}
-                     {selectedAuction.stickers && selectedAuction.stickers.length > 0 && (
-                       <div className="absolute left-2 top-2 flex flex-col space-y-1">
-                         {selectedAuction.stickers.slice(0, 4).map((sticker: any, stickerIndex: number) => (
-                           <img
-                             key={stickerIndex}
-                             src={getStickerImageUrl(sticker.icon_url || sticker)}
-                             alt="Sticker"
-                             className="w-8 h-8 object-contain"
-                           />
-                         ))}
-                       </div>
-                     )}
-                    
-                    {/* Pendant */}
-                    {selectedAuction.pendant && (
-                      <img
-                        src={getPendantImageUrl(selectedAuction.pendant.icon_url)}
-                        alt="Pendant"
-                        className="absolute top-2 right-2 w-10 h-10 object-contain"
-                      />
-                    )}
-                    
-                    {/* Name Tag */}
-                    {selectedAuction.nameTag && (
-                      <div className="absolute bottom-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded font-bold">
-                        NT
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Raridade:</span>
-                      <span className="text-white font-semibold">{selectedAuction.rarity.toUpperCase()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Wear:</span>
-                      <span className="text-white">{selectedAuction.wear.toFixed(4)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Preço Steam:</span>
-                      <span className="text-green-400 font-bold">R$ {selectedAuction.steamPrice.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Informações do leilão */}
-                <div className="space-y-6">
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-lg font-bold text-white mb-3">Informações do Leilão</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Lance atual:</span>
-                        <span className="text-green-400 font-bold">R$ {selectedAuction.currentBid.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Lance mínimo:</span>
-                        <span className="text-white">R$ {selectedAuction.minBid.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Participantes:</span>
-                        <span className="text-white">{selectedAuction.participants}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Termina em:</span>
-                        <span className="text-red-400 font-semibold">
-                          {Math.floor((selectedAuction.endTime.getTime() - Date.now()) / (1000 * 60))} minutos
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Botão de lance */}
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-lg font-bold text-white mb-3">Fazer Lance</h3>
-                    <div className="space-y-3">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleBid(selectedAuction.id, selectedAuction.currentBid + selectedAuction.minBid)}
-                          className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
-                        >
-                          Lance Mínimo (R$ {(selectedAuction.currentBid + selectedAuction.minBid).toLocaleString()})
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Lista de lances */}
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-lg font-bold text-white mb-3">Últimos Lances</h3>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {selectedAuction.biddersList.slice(-5).reverse().map((bidder, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <img
-                              src={bidder.avatar}
-                              alt="Avatar"
-                              className="w-6 h-6 rounded-full"
-                            />
-                            <span className="text-white font-medium">{bidder.nickname}</span>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-blue-400 font-bold">R$ {bidder.bid.toLocaleString()}</div>
-                            <div className="text-gray-400 text-xs">
-                              {Math.floor((Date.now() - bidder.timestamp.getTime()) / (1000 * 60))}m atrás
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Chat do Leilão */}
-              {selectedAuction && (
-                <div className="bg-gray-700 rounded-lg p-4 mt-6">
-                  <h4 className="text-lg font-bold text-white mb-3">Chat do Leilão</h4>
-                  <div className="space-y-2 max-h-40 overflow-y-auto mb-2">
-                    {(auctionChats[selectedAuction.id] || []).map((c, i) => (
-                      <div key={i} className="flex items-center space-x-2">
-                        <span className="text-purple-400 font-bold">{c.user}:</span>
-                        <span className="text-white">{c.msg}</span>
-                        <span className="text-xs text-gray-400">{new Date(c.time).toLocaleTimeString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      maxLength={60}
-                      value={chatInput}
-                      onChange={e => setChatInput(e.target.value)}
-                      className="flex-1 px-3 py-2 bg-gray-600 rounded-lg border border-gray-500 text-white focus:outline-none"
-                      placeholder="Digite sua mensagem (máx 60 caracteres)"
-                      disabled={
-                        !selectedAuction.biddersList.some(b => (steamUser?.steamid || currentUser?.uid) === b.steamId) ||
-                        !!(lastMsgTime[selectedAuction.id] && Date.now() - lastMsgTime[selectedAuction.id] < 15000)
-                      }
-                    />
-                    <button
-                      onClick={() => handleSendChat(selectedAuction.id)}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg font-bold disabled:opacity-50"
-                      disabled={
-                        !selectedAuction.biddersList.some(b => (steamUser?.steamid || currentUser?.uid) === b.steamId) ||
-                        !chatInput.trim() ||
-                        !!(lastMsgTime[selectedAuction.id] && Date.now() - lastMsgTime[selectedAuction.id] < 15000)
-                      }
-                    >
-                      Enviar
-                    </button>
-                  </div>
-                  {!selectedAuction.biddersList.some(b => (steamUser?.steamid || currentUser?.uid) === b.steamId) && (
-                    <div className="text-xs text-yellow-400 mt-1">Apenas usuários que deram lance podem enviar mensagens.</div>
-                  )}
-                  {lastMsgTime[selectedAuction.id] && Date.now() - lastMsgTime[selectedAuction.id] < 15000 && selectedAuction.biddersList.some(b => (steamUser?.steamid || currentUser?.uid) === b.steamId) && (
-                    <div className="text-xs text-red-400 mt-1">Aguarde 15 segundos para enviar outra mensagem.</div>
-                  )}
-                </div>
-              )}
+        {/* Mensagem quando não há leilões filtrados */}
+        {auctionsFiltered.length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
+            <p className="text-gray-400 text-lg">Nenhum leilão encontrado com os filtros aplicados</p>
+            <button 
+              onClick={() => setActiveFilters({ rarity: '', priceRange: '', game: '', sortBy: 'ending' })}
+              className="mt-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all duration-300"
+            >
+              Limpar Filtros
+            </button>
           </div>
         )}
       </div>
 
-      {/* Filters Sidebar */}
-      <FiltersSidebar
-        isOpen={showFilters}
-        onClose={() => setShowFilters(false)}
-        onFilterChange={setActiveFilters}
-        pageType="leiloes"
-      />
+      {/* Modal de detalhes do leilão */}
+      {selectedAuction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-white text-xl font-bold">{selectedAuction.name}</h3>
+              <button 
+                onClick={handleCloseModal}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
 
-      {auctionsFiltered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16">
-          <span className="text-2xl font-bold text-white mb-4 text-center">
-            nenhum item disponivel no momento<br/>aproveite e coloque o seu item!
-          </span>
-          <button
-            className="mt-4 px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold shadow-lg hover:scale-105 transition"
-            onClick={() => navigate('/criar-leilao')}
-          >
-            Criar
-          </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Imagem e detalhes básicos */}
+              <div>
+                <img
+                  src={selectedAuction.image}
+                  alt={selectedAuction.name}
+                  className="w-full h-48 object-contain bg-gray-700 rounded-lg mb-4"
+                />
+                
+                <div className="space-y-2 text-white">
+                  <div><span className="text-gray-400">Raridade:</span> {selectedAuction.rarity.toUpperCase()}</div>
+                  <div><span className="text-gray-400">Preço Steam:</span> R$ {selectedAuction.steamPrice.toLocaleString()}</div>
+                  <div><span className="text-gray-400">Lance mínimo:</span> R$ {selectedAuction.minBid.toLocaleString()}</div>
+                  <div><span className="text-gray-400">Termina em:</span> {selectedAuction.endTime.toLocaleDateString('pt-BR')}</div>
+                </div>
+              </div>
+
+              {/* Chat e lances */}
+              <div>
+                <h4 className="text-white font-semibold mb-3">Chat do Leilão</h4>
+                
+                {/* Lista de lances */}
+                <div className="bg-gray-700 rounded-lg p-3 mb-3 max-h-32 overflow-y-auto">
+                  {selectedAuction.biddersList.length > 0 ? (
+                    selectedAuction.biddersList.map((bid, index) => (
+                      <div key={index} className="flex items-center space-x-2 mb-2">
+                        <img
+                          src={bid.avatar}
+                          alt={bid.nickname}
+                          className="w-6 h-6 rounded-full"
+                        />
+                        <span className="text-white text-sm">{bid.nickname}</span>
+                        <span className="text-green-400 text-sm font-bold">
+                          R$ {bid.bid.toLocaleString()}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-400 text-sm">Nenhum lance ainda</p>
+                  )}
+                </div>
+
+                {/* Input do chat */}
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Digite uma mensagem..."
+                    className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm"
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendChat(selectedAuction.id)}
+                  />
+                  <button
+                    onClick={() => handleSendChat(selectedAuction.id)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+                  >
+                    Enviar
+                  </button>
+                </div>
+
+                {/* Botão de lance */}
+                <button
+                  onClick={() => handleBid(selectedAuction.id, selectedAuction.minBid)}
+                  className="w-full mt-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-300"
+                >
+                  Fazer Lance de R$ {selectedAuction.minBid.toLocaleString()}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Modal de Aviso sobre Bloqueio de Dinheiro */}
-      <BidWarningModal
-        open={showBidWarning}
-        onClose={() => {
-          setShowBidWarning(false);
-          setPendingBid(null);
-        }}
-        onConfirm={handleConfirmBid}
-        bidAmount={pendingBid?.amount || 0}
-      />
+      {/* Modal de confirmação de lance */}
+      {showBidWarning && (
+        <BidWarningModal
+          isOpen={showBidWarning}
+          onClose={() => setShowBidWarning(false)}
+          onConfirm={handleConfirmBid}
+          bidAmount={pendingBid?.amount || 0}
+        />
+      )}
     </div>
   );
 } 

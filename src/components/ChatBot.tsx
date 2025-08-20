@@ -59,7 +59,7 @@ const fuse = new Fuse(FAQ, { keys: ['question'], threshold: 0.4 });
 const ChatBot: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { from: 'bot', text: 'Olá! Sou o bot de dúvidas do Skins Rifas. Pergunte algo ou escolha uma dúvida frequente abaixo.' }
+    { from: 'bot', text: 'Olá! Sou o bot de dúvidas do Epics Trade. Pergunte algo ou escolha uma dúvida frequente abaixo.' }
   ]);
   const [input, setInput] = useState('');
   const chatRef = useRef<HTMLDivElement>(null);
@@ -74,7 +74,7 @@ const ChatBot: React.FC = () => {
   // Zerar chat ao trocar de página
   useEffect(() => {
     setMessages([
-      { from: 'bot', text: 'Olá! Sou o bot de dúvidas do Skins Rifas. Pergunte algo ou escolha uma dúvida frequente abaixo.' }
+      { from: 'bot', text: 'Olá! Sou o bot de dúvidas do Epics Trade. Pergunte algo ou escolha uma dúvida frequente abaixo.' }
     ]);
     setInput('');
   }, [location.pathname]);

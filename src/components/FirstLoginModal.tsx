@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { db } from '../firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { FaSearch, FaQuestionCircle, FaCheck, FaArrowRight, FaArrowLeft, FaShieldAlt, FaUser, FaLink, FaCheckCircle, FaExclamationTriangle, FaTimes } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
 
 const countries = [
   { code: 'BR', name: 'Brasil', en: 'Brazil', flag: '🇧🇷' },

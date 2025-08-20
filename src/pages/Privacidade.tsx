@@ -2,7 +2,7 @@ export default function Privacidade() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center py-12 px-4">
       <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl p-8 max-w-2xl w-full border border-white/20">
-        <h1 className="text-3xl md:text-4xl font-black text-white mb-6 text-center">Política de Privacidade – Skins Rifas</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-white mb-6 text-center">Política de Privacidade – Epics Trade</h1>
         <p className="text-white/90 mb-4">Coletamos apenas os dados necessários para o funcionamento seguro e eficiente da plataforma.</p>
         <h2 className="text-xl font-bold text-white mt-6 mb-2">1. Dados que coletamos:</h2>
         <ul className="list-disc list-inside text-white/80 space-y-1 mb-4">

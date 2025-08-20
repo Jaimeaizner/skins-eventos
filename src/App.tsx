@@ -3,10 +3,12 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ModalProvider } from './contexts/ModalContext';
 import { GameProvider } from './contexts/GameContext';
+import { EventProvider } from './contexts/EventContext';
+import { AdminProvider } from './contexts/AdminContext';
 import Navigation from './components/Navigation';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
-import Rifas from './pages/Rifas';
+import Eventos from './pages/Eventos';
 import Leiloes from './pages/Leiloes';
 import CriarRifa from './pages/CriarRifa';
 import CriarLeilao from './pages/CriarLeilao';
@@ -21,12 +23,17 @@ import { db } from './firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import ChatBot from './components/ChatBot';
 import Admin from './pages/Admin';
+import AdminPanel from './pages/AdminPanel';
+import AdminGuard from './components/AdminGuard';
 import FirstLoginModal from './components/FirstLoginModal';
 import { useEffect, useState } from 'react';
 import Footer from './components/Footer';
 import Termos from './pages/Termos';
 import Privacidade from './pages/Privacidade';
 import { SteamCallbackHandler } from './pages/LandingPage';
+import FeatureGuard from './components/FeatureGuard';
+import { FEATURES } from './config/features';
+import FeatureDemo from './components/FeatureDemo';
 
 function AppContent() {
   const { currentUser, steamUser, loading } = useAuth();
@@ -108,20 +115,26 @@ function AppContent() {
         <Navigation />
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/eventos" element={<Rifas />} />
-          <Route path="/leiloes" element={<Leiloes />} />
-          <Route path="/criar-rifa" element={<CriarRifa />} />
-          <Route path="/criar-leilao" element={<CriarLeilao />} />
-          <Route path="/inventario" element={<Inventario />} />
-          <Route path="/meus-bilhetes" element={<MeusBilhetes />} />
-          <Route path="/carteira" element={<Carteira />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/transacoes" element={<Transacoes />} />
+          <Route path="/dashboard" element={<FeatureGuard feature="DASHBOARD"><Dashboard /></FeatureGuard>} />
+                            <Route path="/eventos" element={<FeatureGuard feature="RIFFAS"><Eventos /></FeatureGuard>} />
+          <Route path="/leiloes" element={<FeatureGuard feature="LEILOES"><Leiloes /></FeatureGuard>} />
+          <Route path="/criar-rifa" element={<FeatureGuard feature="RIFFAS"><CriarRifa /></FeatureGuard>} />
+          <Route path="/criar-leilao" element={<FeatureGuard feature="LEILOES"><CriarLeilao /></FeatureGuard>} />
+          <Route path="/inventario" element={<FeatureGuard feature="INVENTARIO"><Inventario /></FeatureGuard>} />
+          <Route path="/meus-bilhetes" element={<FeatureGuard feature="MEUS_BILHETES"><MeusBilhetes /></FeatureGuard>} />
+          <Route path="/carteira" element={<FeatureGuard feature="CARTEIRA"><Carteira /></FeatureGuard>} />
+          <Route path="/configuracoes" element={<FeatureGuard feature="DASHBOARD"><Configuracoes /></FeatureGuard>} />
+          <Route path="/transacoes" element={<FeatureGuard feature="TRANSACOES"><Transacoes /></FeatureGuard>} />
           <Route path="/suporte" element={<Suporte />} />
           <Route path="/termos-de-uso" element={<Termos />} />
           <Route path="/privacidade" element={<Privacidade />} />
-          <Route path="/admin" element={<Admin />} />
+                            <Route path="/admin" element={<FeatureGuard feature="ADMIN"><Admin /></FeatureGuard>} />
+                  <Route path="/admin-panel" element={
+                    <AdminGuard requiredPermission="create_events">
+                      <AdminPanel />
+                    </AdminGuard>
+                  } />
+          <Route path="/feature-demo" element={<FeatureDemo />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         <ChatBot />
@@ -137,16 +150,20 @@ function App() {
     <GameProvider>
       <AuthProvider>
         <LanguageProvider>
-          <ModalProvider>
-            <Router>
-              <div className="App">
-                <Routes>
-                  <Route path="/auth/steam/callback" element={<SteamCallbackHandler />} />
-                  <Route path="*" element={<AppContent />} />
-                </Routes>
-              </div>
-            </Router>
-          </ModalProvider>
+          <EventProvider>
+            <AdminProvider>
+              <ModalProvider>
+                <Router>
+                  <div className="App">
+                    <Routes>
+                      <Route path="/auth/steam/callback" element={<SteamCallbackHandler />} />
+                      <Route path="*" element={<AppContent />} />
+                    </Routes>
+                  </div>
+                </Router>
+              </ModalProvider>
+            </AdminProvider>
+          </EventProvider>
         </LanguageProvider>
       </AuthProvider>
     </GameProvider>

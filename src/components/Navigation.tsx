@@ -2,12 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../contexts/AdminContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useModal } from '../contexts/ModalContext';
 import DropdownGames from './DropdownGames';
 import { useGame } from '../contexts/GameContext';
 import NotificationsModal from './NotificationsModal';
 import { FaWallet, FaLock, FaMedal } from 'react-icons/fa';
+import { useFeature } from './FeatureGuard';
 
 const LANGUAGES = [
   { code: 'pt', abbr: 'BR', flag: '🇧🇷' },
@@ -18,6 +20,7 @@ const LANGUAGES = [
 
 export default function Navigation() {
   const { currentUser, steamUser, balance, lockedBalance, points, logout } = useAuth();
+  const { isAdmin } = useAdmin();
   const { t, language, setLanguage } = useLanguage();
   const { setIsModalOpen } = useModal();
   const { selectedGame, setSelectedGame } = useGame();
@@ -100,15 +103,16 @@ export default function Navigation() {
           {/* Esquerda: Logo + Dropdown de Jogos */}
           <div className="flex items-center gap-x-10 flex-shrink-0 min-w-[320px]">
             <Link to="/" className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <span className="text-white font-black text-xl">SR</span>
-              </div>
-              <h1 className="text-3xl font-black text-white whitespace-nowrap">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-red-400">
-                  SKINS
-                </span>{' '}
-                <span className="text-white">RIFAS</span>
-              </h1>
+              <img 
+                src="/LogoEpicsTrade.png" 
+                alt="Epics Trade Logo" 
+                className="w-16 h-16 object-contain"
+              />
+                              <h1 className="text-3xl font-black whitespace-nowrap">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-400 to-purple-500 drop-shadow-lg">
+                    EPICSTRADE
+                  </span>
+                </h1>
             </Link>
             <div className="min-w-[160px] max-w-[200px]">
               <DropdownGames selectedGame={selectedGame} onSelect={setSelectedGame} />
@@ -127,43 +131,43 @@ export default function Navigation() {
               >
                 Dashboard
               </Link>
-              <Link
-              to="/eventos"
-                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                isActive('/eventos')
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
-                    : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
-                }`}
-              >
-              Eventos
-              </Link>
-              <Link
-                to="/leiloes"
-                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                  isActive('/leiloes') 
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
-                    : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
-                }`}
-              >
-                Leilões
-              </Link>
-              <Link
-                to="/meus-bilhetes"
-                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                  isActive('/meus-bilhetes') 
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
-                    : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
-                }`}
-              >
-                {t('nav.my_tickets')}
-              </Link>
-            {/* Botão Criar */}
-              <button
-              className="ml-4 px-6 py-2 rounded-xl bg-gradient-to-r from-yellow-400 to-pink-500 text-white font-bold shadow-lg hover:scale-105 transition whitespace-nowrap"
-              onClick={() => setShowCreateModal(true)}
-            >
-              + Criar
-              </button>
+              {useFeature('RIFFAS') && (
+                <Link
+                  to="/eventos"
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    isActive('/eventos')
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                      : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
+                  }`}
+                >
+                  Eventos
+                </Link>
+              )}
+              {useFeature('LEILOES') && (
+                <Link
+                  to="/leiloes"
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    isActive('/leiloes') 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                      : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
+                  }`}
+                >
+                  Leilões
+                </Link>
+              )}
+              {useFeature('MEUS_BILHETES') && (
+                <Link
+                  to="/meus-bilhetes"
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    isActive('/meus-bilhetes') 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                      : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10'
+                  }`}
+                >
+                  {t('nav.my_tickets')}
+                </Link>
+              )}
+
           </nav>
 
           {/* Direita: Carteira, Notificação, Usuário, Idioma */}
@@ -246,19 +250,23 @@ export default function Navigation() {
                           </div>
                         </div>
                         <div className="p-2 flex flex-col gap-1">
-                          <button onClick={() => { navigate('/inventario'); setShowUserMenu(false); }} className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10 transition-all duration-300 w-full">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                            <span className="font-bold drop-shadow text-white">{t('user.inventory')}</span>
-                          </button>
+                          {useFeature('INVENTARIO') && (
+                            <button onClick={() => { navigate('/inventario'); setShowUserMenu(false); }} className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10 transition-all duration-300 w-full">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                              <span className="font-bold drop-shadow text-white">{t('user.inventory')}</span>
+                            </button>
+                          )}
                           <div className="border-t border-white border-opacity-20 my-2"></div>
                           <button onClick={() => { navigate('/carteira'); setShowUserMenu(false); }} className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10 transition-all duration-300 w-full">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" /></svg>
                             <span className="font-bold drop-shadow text-white">{t('user.wallet')}</span>
                           </button>
-                          <button onClick={() => { navigate('/transacoes'); setShowUserMenu(false); }} className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10 transition-all duration-300 w-full">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                            <span className="font-bold drop-shadow text-white">{t('user.transactions')}</span>
-                          </button>
+                          {useFeature('TRANSACOES') && (
+                            <button onClick={() => { navigate('/transacoes'); setShowUserMenu(false); }} className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10 transition-all duration-300 w-full">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                              <span className="font-bold drop-shadow text-white">{t('user.transactions')}</span>
+                            </button>
+                          )}
                           <div className="border-t border-white border-opacity-20 my-2"></div>
                           <button onClick={() => { navigate('/configuracoes'); setShowUserMenu(false); }} className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-10 transition-all duration-300 w-full">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -337,33 +345,23 @@ export default function Navigation() {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              {/* Botão Criar Evento */}
-              <button
-                onClick={() => { navigate('/criar-rifa'); setShowCreateModal(false); setIsModalOpen(false); }}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 px-6 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex flex-col items-center space-y-2 group"
-              >
-                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center group-hover:bg-opacity-30 transition-all duration-300">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </div>
-                <span>Criar Evento</span>
-                <span className="text-xs opacity-80">Sistema de rifas</span>
-              </button>
+
 
               {/* Botão Criar Leilão */}
-              <button
-                onClick={() => { navigate('/criar-leilao'); setShowCreateModal(false); setIsModalOpen(false); }}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-4 px-6 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex flex-col items-center space-y-2 group"
-              >
-                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center group-hover:bg-opacity-30 transition-all duration-300">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <span>Criar Leilão</span>
-                <span className="text-xs opacity-80">Sistema de lances</span>
-              </button>
+              {useFeature('LEILOES') && (
+                <button
+                  onClick={() => { navigate('/criar-leilao'); setShowCreateModal(false); setIsModalOpen(false); }}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-4 px-6 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex flex-col items-center space-y-2 group"
+                >
+                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center group-hover:bg-opacity-30 transition-all duration-300">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <span>Criar Leilão</span>
+                  <span className="text-xs opacity-80">Sistema de lances</span>
+                </button>
+              )}
             </div>
 
             {/* Botão Fechar */}

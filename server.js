@@ -101,6 +101,252 @@ app.get('/api/auth/steam/callback', async (req, res) => {
   }
 });
 
+// Cache para inventários (evitar requisições repetidas)
+const inventoryCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+// Rate limiting para evitar 429
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 2000; // 2 segundos entre requisições
+
+// Função para aguardar entre requisições
+const waitForRateLimit = async () => {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    console.log(`[INVENTORY] Aguardando ${waitTime}ms para respeitar rate limit`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+  }
+  
+  lastRequestTime = Date.now();
+};
+
+// API para inventário - VERSÃO CORRIGIDA baseada na análise do ChatGPT
+app.get('/api/steam/inventory/:steamId/:appId', async (req, res) => {
+  try {
+    const { steamId, appId } = req.params;
+    
+    console.log(`[INVENTORY] Buscando inventário para Steam ID: ${steamId}, App ID: ${appId}`);
+    
+    // URL CORRETA conforme ChatGPT: https://steamcommunity.com/inventory/{steamid}/{appid}/{contextid}
+    const correctUrl = `https://steamcommunity.com/inventory/${steamId}/${appId}/2`;
+    
+    console.log(`[INVENTORY] Usando URL correta: ${correctUrl}`);
+    
+    const response = await fetch(correctUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Cache-Control': 'no-cache'
+      },
+      timeout: 15000
+    });
+    
+    console.log(`[INVENTORY] Status da resposta: ${response.status}`);
+    
+    if (!response.ok) {
+      console.error(`[INVENTORY] Erro HTTP: ${response.status}`);
+      
+      if (response.status === 403) {
+        console.log(`[INVENTORY] Inventário privado detectado (403)`);
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Inventário privado. Torne seu inventário público nas configurações do Steam.'
+        });
+      }
+      
+      if (response.status === 429) {
+        console.log(`[INVENTORY] Rate limit atingido (429)`);
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Muitas requisições. Tente novamente em alguns minutos.'
+        });
+      }
+      
+      return res.status(200).json({ 
+        success: true,
+        descriptions: [],
+        assets: [],
+        message: `Erro HTTP ${response.status}. Verifique se seu perfil Steam está público.`
+      });
+    }
+    
+    const responseText = await response.text();
+    console.log(`[INVENTORY] Resposta recebida (primeiros 500 chars): ${responseText.substring(0, 500)}`);
+    
+    try {
+      const data = JSON.parse(responseText);
+      
+      if (!data) {
+        console.log(`[INVENTORY] Resposta vazia`);
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Resposta vazia da Steam. Verifique se seu inventário está público.'
+        });
+      }
+      
+      // Verificar se tem assets e descriptions
+      if (!data.assets || !data.descriptions) {
+        console.log(`[INVENTORY] Resposta sem assets ou descriptions:`, JSON.stringify(data, null, 2));
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Inventário vazio ou não encontrado. Verifique se você tem itens no CS2.'
+        });
+      }
+      
+      console.log(`[INVENTORY] Sucesso! ${data.descriptions.length} descrições, ${data.assets.length} assets`);
+      
+      res.json({
+        success: true,
+        descriptions: data.descriptions,
+        assets: data.assets
+      });
+      
+    } catch (parseError) {
+      console.error(`[INVENTORY] Erro ao fazer parse JSON:`, parseError);
+      console.log(`[INVENTORY] Resposta que causou erro:`, responseText);
+      return res.status(200).json({ 
+        success: true,
+        descriptions: [],
+        assets: [],
+        message: 'Erro ao processar resposta da Steam. Verifique se seu inventário está público.'
+      });
+    }
+    
+  } catch (error) {
+    console.error('[INVENTORY] Erro:', error);
+    res.status(200).json({ 
+      success: true,
+      descriptions: [],
+      assets: [],
+      message: 'Erro interno ao carregar inventário'
+    });
+  }
+});
+
+// API para inventário (sem appId) - ROTA QUE ESTAVA FALTANDO
+app.get('/api/steam/inventory/:steamId', async (req, res) => {
+  try {
+    const { steamId } = req.params;
+    
+    console.log(`[INVENTORY] Buscando inventário para Steam ID: ${steamId} (sem appId)`);
+    
+    // Usar appId padrão 730 (CS2) e contextId 2
+    const correctUrl = `https://steamcommunity.com/inventory/${steamId}/730/2`;
+    
+    console.log(`[INVENTORY] Usando URL correta: ${correctUrl}`);
+    
+    const response = await fetch(correctUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Cache-Control': 'no-cache'
+      },
+      timeout: 15000
+    });
+    
+    console.log(`[INVENTORY] Status da resposta: ${response.status}`);
+    
+    if (!response.ok) {
+      console.error(`[INVENTORY] Erro HTTP: ${response.status}`);
+      
+      if (response.status === 403) {
+        console.log(`[INVENTORY] Inventário privado detectado (403)`);
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Inventário privado. Torne seu inventário público nas configurações do Steam.'
+        });
+      }
+      
+      if (response.status === 429) {
+        console.log(`[INVENTORY] Rate limit atingido (429)`);
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Muitas requisições. Tente novamente em alguns minutos.'
+        });
+      }
+      
+      return res.status(200).json({ 
+        success: true,
+        descriptions: [],
+        assets: [],
+        message: `Erro HTTP ${response.status}. Verifique se seu perfil Steam está público.`
+      });
+    }
+    
+    const responseText = await response.text();
+    console.log(`[INVENTORY] Resposta recebida (primeiros 500 chars): ${responseText.substring(0, 500)}`);
+    
+    try {
+      const data = JSON.parse(responseText);
+      
+      if (!data) {
+        console.log(`[INVENTORY] Resposta vazia`);
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Resposta vazia da Steam. Verifique se seu inventário está público.'
+        });
+      }
+      
+      // Verificar se tem assets e descriptions
+      if (!data.assets || !data.descriptions) {
+        console.log(`[INVENTORY] Resposta sem assets ou descriptions:`, JSON.stringify(data, null, 2));
+        return res.status(200).json({ 
+          success: true,
+          descriptions: [],
+          assets: [],
+          message: 'Inventário vazio ou não encontrado. Verifique se você tem itens no CS2.'
+        });
+      }
+      
+      console.log(`[INVENTORY] Sucesso! ${data.descriptions.length} descrições, ${data.assets.length} assets`);
+      
+      res.json({
+        success: true,
+        descriptions: data.descriptions,
+        assets: data.assets
+      });
+      
+    } catch (parseError) {
+      console.error(`[INVENTORY] Erro ao fazer parse JSON:`, parseError);
+      console.log(`[INVENTORY] Resposta que causou erro:`, responseText);
+      return res.status(200).json({ 
+        success: true,
+        descriptions: [],
+        assets: [],
+        message: 'Erro ao processar resposta da Steam. Verifique se seu inventário está público.'
+      });
+    }
+    
+  } catch (error) {
+    console.error('[INVENTORY] Erro:', error);
+    res.status(200).json({ 
+      success: true,
+      descriptions: [],
+      assets: [],
+      message: 'Erro interno ao carregar inventário'
+    });
+  }
+});
+
 // API para dados do usuário Steam
 app.get('/api/steam/user/:steamId', async (req, res) => {
   try {
@@ -189,108 +435,190 @@ app.get('/api/steam/user/:steamId', async (req, res) => {
   }
 });
 
-// API para inventário
-app.get('/api/steam/inventory/:steamId/:appId', async (req, res) => {
-  try {
-    const { steamId, appId } = req.params;
-    
-    console.log(`[INVENTORY] Buscando inventário para Steam ID: ${steamId}, App ID: ${appId}`);
-    
-    const response = await fetch(
-      `https://steamcommunity.com/inventory/${steamId}/${appId}/2?l=portuguese&count=5000`
-    );
-    
-    if (!response.ok) {
-      console.error(`[INVENTORY] Erro HTTP ao buscar inventário: ${response.status}`);
-      
-      // Se for erro 400, provavelmente é inventário privado
-      if (response.status === 400) {
-        return res.status(200).json({ 
-          success: true,
-          descriptions: [],
-          assets: [],
-          message: 'Inventário privado ou não encontrado'
-        });
-      }
-      
-      return res.status(response.status).json({ 
-        error: `Erro HTTP: ${response.status}`,
-        success: false 
-      });
-    }
-    
-    const data = await response.json();
-    
-    if (!data) {
-      console.error('[INVENTORY] Resposta vazia do inventário Steam');
-      return res.status(200).json({ 
-        success: true,
-        descriptions: [],
-        assets: [],
-        message: 'Inventário vazio'
-      });
-    }
-    
-    // Verificar se o inventário está vazio
-    if (!data.descriptions || !data.assets || data.descriptions.length === 0 || data.assets.length === 0) {
-      console.log('[INVENTORY] Inventário vazio para Steam ID:', steamId);
-      return res.status(200).json({ 
-        success: true,
-        descriptions: [],
-        assets: [],
-        message: 'Inventário vazio'
-      });
-    }
-    
-    console.log(`[INVENTORY] Inventário carregado com sucesso: ${data.descriptions.length} descrições, ${data.assets.length} assets`);
-    
-    res.json({
-      success: true,
-      ...data
-    });
-  } catch (error) {
-    console.error('[INVENTORY] Erro ao buscar inventário:', error);
-    res.status(200).json({ 
-      success: true,
-      descriptions: [],
-      assets: [],
-      message: 'Erro ao carregar inventário'
-    });
-  }
-});
+// Cache para preços do mercado (evitar rate limiting)
+const marketPriceCache = new Map();
+const MARKET_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
-// API para preços do mercado
+// Rate limiting para preços do mercado
+let lastMarketRequestTime = 0;
+const MIN_MARKET_REQUEST_INTERVAL = 2000; // 2 segundos entre requisições
+
+// Função para aguardar entre requisições de preço do mercado
+const waitForMarketRateLimit = async () => {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastMarketRequestTime;
+  
+  if (timeSinceLastRequest < MIN_MARKET_REQUEST_INTERVAL) {
+    const waitTime = MIN_MARKET_REQUEST_INTERVAL - timeSinceLastRequest;
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+  }
+  
+  lastMarketRequestTime = Date.now();
+};
+
+// API para preços do mercado - CORRIGIDA conforme ChatGPT
 app.get('/api/steam/market/:marketHashName', async (req, res) => {
   try {
     const { marketHashName } = req.params;
-    const response = await fetch(
-      `https://steamcommunity.com/market/priceoverview/?appid=730&currency=7&market_hash_name=${encodeURIComponent(marketHashName)}`
-    );
+    
+    // Verificar cache primeiro
+    const cached = marketPriceCache.get(marketHashName);
+    if (cached && Date.now() - cached.timestamp < MARKET_CACHE_DURATION) {
+      console.log(`[MARKET] Cache hit para: ${marketHashName}`);
+      return res.json(cached.data);
+    }
+
+    // Aguardar rate limit
+    await waitForMarketRateLimit();
+    
+    console.log(`[MARKET] Buscando preço para: ${marketHashName}`);
+    
+    // URL CORRETA conforme ChatGPT
+    const url = `https://steamcommunity.com/market/priceoverview/?appid=730&currency=7&market_hash_name=${encodeURIComponent(marketHashName)}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Cache-Control': 'no-cache'
+      },
+      timeout: 10000
+    });
     
     if (!response.ok) {
-      console.error(`Erro HTTP ao buscar preços: ${response.status}`);
+      if (response.status === 429) {
+        console.warn(`[MARKET] Rate limit atingido para: ${marketHashName}`);
+        // Retornar preço padrão em caso de rate limit
+        const defaultData = {
+          success: false,
+          lowest_price: 'R$ 0,00',
+          volume: '0',
+          median_price: 'R$ 0,00'
+        };
+        
+        // Salvar no cache mesmo sendo erro
+        marketPriceCache.set(marketHashName, {
+          data: defaultData,
+          timestamp: Date.now()
+        });
+        
+        return res.json(defaultData);
+      }
+      
+      console.error(`[MARKET] Erro HTTP ao buscar preços: ${response.status}`);
       return res.status(response.status).json({ 
-        error: `Erro HTTP: ${response.status}`,
-        success: false 
+        success: false,
+        lowest_price: 'R$ 0,00',
+        volume: '0',
+        median_price: 'R$ 0,00',
+        error: `Erro HTTP: ${response.status}`
       });
     }
     
     const data = await response.json();
     
     if (!data) {
-      console.error('Resposta vazia do mercado Steam');
+      console.error('[MARKET] Resposta vazia do mercado Steam');
       return res.status(500).json({ 
-        error: 'Resposta vazia do mercado Steam',
-        success: false 
+        success: false,
+        lowest_price: 'R$ 0,00',
+        volume: '0',
+        median_price: 'R$ 0,00',
+        error: 'Resposta vazia do mercado Steam'
       });
     }
     
-    res.json(data);
+    // Garantir que os campos existam
+    const priceData = {
+      success: data.success || false,
+      lowest_price: data.lowest_price || 'R$ 0,00',
+      volume: data.volume || '0',
+      median_price: data.median_price || 'R$ 0,00'
+    };
+    
+    // Salvar no cache
+    marketPriceCache.set(marketHashName, {
+      data: priceData,
+      timestamp: Date.now()
+    });
+    
+    console.log(`[MARKET] Preço encontrado para ${marketHashName}: ${priceData.lowest_price}`);
+    res.json(priceData);
+    
   } catch (error) {
-    console.error('Erro ao buscar preços:', error);
-    res.status(500).json({ 
-      error: 'Erro ao buscar preços',
-      success: false 
+    console.error('[MARKET] Erro ao buscar preços:', error);
+    
+    // Retornar preço padrão em caso de erro
+    const errorData = {
+      success: false,
+      lowest_price: 'R$ 0,00',
+      volume: '0',
+      median_price: 'R$ 0,00',
+      error: 'Erro ao buscar preços'
+    };
+    
+    res.json(errorData);
+  }
+});
+
+// API para dados detalhados de itens via inspect link (CSFloat)
+app.get('/api/steam/item-details/:inspectLink', async (req, res) => {
+  try {
+    const { inspectLink } = req.params;
+    
+    console.log(`[ITEM DETAILS] Buscando detalhes para inspect link: ${inspectLink}`);
+    
+    // Usar a API do CSFloat para obter dados detalhados
+    const response = await fetch(`https://api.csgofloat.com/?url=${encodeURIComponent(inspectLink)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json'
+      },
+      timeout: 15000
+    });
+    
+    if (!response.ok) {
+      console.error(`[ITEM DETAILS] Erro HTTP: ${response.status}`);
+      return res.status(response.status).json({
+        success: false,
+        error: `Erro HTTP: ${response.status}`
+      });
+    }
+    
+    const data = await response.json();
+    
+    if (!data || !data.iteminfo) {
+      console.error('[ITEM DETAILS] Resposta inválida da API CSFloat');
+      return res.status(500).json({
+        success: false,
+        error: 'Resposta inválida da API CSFloat'
+      });
+    }
+    
+    // Extrair dados relevantes
+    const itemDetails = {
+      success: true,
+      float: data.iteminfo.floatvalue || 0,
+      paintSeed: data.iteminfo.paintseed || 0,
+      paintIndex: data.iteminfo.paintindex || 0,
+      rarity: data.iteminfo.rarity || 'Common',
+      stickers: data.iteminfo.stickers || [],
+      nameTag: data.iteminfo.nametag || null,
+      statTrak: data.iteminfo.stat_trak || false,
+      souvenir: data.iteminfo.souvenir || false,
+      exterior: data.iteminfo.exterior || 'Factory New',
+      wear: data.iteminfo.wear || 0
+    };
+    
+    console.log(`[ITEM DETAILS] Detalhes encontrados para ${inspectLink}: float=${itemDetails.float}`);
+    res.json(itemDetails);
+    
+  } catch (error) {
+    console.error('[ITEM DETAILS] Erro:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar detalhes do item'
     });
   }
 });
@@ -397,6 +725,136 @@ function extractCondition(html) {
   const match = html.match(/Exterior: ([^<]+)/);
   return match ? match[1] : 'Field-Tested';
 }
+
+// API para testar se o inventário está público (sugestão do ChatGPT)
+app.get('/api/steam/test-inventory/:steamId', async (req, res) => {
+  try {
+    const { steamId } = req.params;
+    
+    console.log(`[TEST] Testando inventário para Steam ID: ${steamId}`);
+    
+    // Testar a URL direta conforme ChatGPT
+    const testUrl = `https://steamcommunity.com/inventory/${steamId}/730/2`;
+    
+    console.log(`[TEST] Testando URL: ${testUrl}`);
+    
+    const response = await fetch(testUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    
+    console.log(`[TEST] Status da resposta: ${response.status}`);
+    
+    if (response.ok) {
+      const responseText = await response.text();
+      console.log(`[TEST] Resposta recebida (primeiros 300 chars): ${responseText.substring(0, 300)}`);
+      
+      try {
+        const data = JSON.parse(responseText);
+        
+        if (data && data.assets && data.descriptions) {
+          console.log(`[TEST] Inventário público encontrado! ${data.assets.length} assets, ${data.descriptions.length} descriptions`);
+          res.json({
+            success: true,
+            isPublic: true,
+            assetsCount: data.assets.length,
+            descriptionsCount: data.descriptions.length,
+            message: 'Inventário está público e acessível!'
+          });
+        } else {
+          console.log(`[TEST] Inventário vazio ou sem dados`);
+          res.json({
+            success: true,
+            isPublic: true,
+            assetsCount: 0,
+            descriptionsCount: 0,
+            message: 'Inventário está público mas vazio.'
+          });
+        }
+      } catch (parseError) {
+        console.error(`[TEST] Erro ao fazer parse JSON:`, parseError);
+        res.json({
+          success: false,
+          isPublic: false,
+          message: 'Erro ao processar resposta da Steam.'
+        });
+      }
+    } else {
+      console.log(`[TEST] Inventário não acessível (HTTP ${response.status})`);
+      res.json({
+        success: false,
+        isPublic: false,
+        status: response.status,
+        message: response.status === 403 ? 'Inventário privado' : `Erro HTTP ${response.status}`
+      });
+    }
+    
+  } catch (error) {
+    console.error('[TEST] Erro:', error);
+    res.json({
+      success: false,
+      isPublic: false,
+      message: 'Erro ao testar inventário'
+    });
+  }
+});
+
+// API para proxy de imagens da Steam (evitar CORS)
+app.get('/api/steam-image', async (req, res) => {
+  try {
+    const { url } = req.query;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL não fornecida' });
+    }
+    
+    // Validar URL da Steam
+    if (!url.includes('steamstatic.com') && !url.includes('steamcdn-a.akamaihd.net')) {
+      return res.status(400).json({ error: 'URL inválida' });
+    }
+    
+    console.log(`[STEAM IMAGE] Buscando imagem: ${url}`);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Referer': 'https://steamcommunity.com/',
+        'Origin': 'https://steamcommunity.com'
+      },
+      timeout: 15000
+    });
+    
+    if (!response.ok) {
+      console.warn(`[STEAM IMAGE] Erro HTTP: ${response.status} para ${url}`);
+      return res.status(response.status).json({ error: 'Imagem não encontrada' });
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.startsWith('image/')) {
+      console.warn(`[STEAM IMAGE] Content-Type inválido: ${contentType} para ${url}`);
+      return res.status(400).json({ error: 'URL não é uma imagem válida' });
+    }
+    
+    const buffer = await response.arrayBuffer();
+    
+    // Headers para cache e CORS
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache por 24 horas
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    res.send(Buffer.from(buffer));
+    
+  } catch (error) {
+    console.error('[STEAM IMAGE] Erro:', error);
+    res.status(500).json({ error: 'Erro ao buscar imagem' });
+  }
+});
 
 // SPA fallback - todas as outras rotas vão para o index.html
 app.get('*', (req, res) => {

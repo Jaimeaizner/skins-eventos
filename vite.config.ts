@@ -15,7 +15,7 @@ export default defineConfig({
     force: true
   },
   server: {
-    port: 3000,
+    port: 3002,
     host: true
   },
   define: {
