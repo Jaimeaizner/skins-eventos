@@ -108,11 +108,14 @@ export default function Navigation() {
                 alt="Epics Trade Logo" 
                 className="w-16 h-16 object-contain"
               />
-                              <h1 className="text-3xl font-black whitespace-nowrap">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-400 to-purple-500 drop-shadow-lg">
-                    EPICSTRADE
-                  </span>
-                </h1>
+                                                <h1 className="text-3xl font-black whitespace-nowrap">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-400 to-purple-500 drop-shadow-lg">
+                      Epics
+                    </span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-400 to-purple-500 drop-shadow-lg ml-2">
+                      Trade
+                    </span>
+                  </h1>
             </Link>
             <div className="min-w-[160px] max-w-[200px]">
               <DropdownGames selectedGame={selectedGame} onSelect={setSelectedGame} />
